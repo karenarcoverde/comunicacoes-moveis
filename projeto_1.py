@@ -1,10 +1,8 @@
 import streamlit as st
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.patches import RegularPolygon
 import math
-
 
 # ── Erlang-B ──────────────────────────────────────────────────────────
 def erlang_b(A, C):
@@ -65,7 +63,6 @@ def get_cochannel(N):
     return translations
 
 # ── Entradas ──────────────────────────────────────────────────────────
-#st.title("Cobertura Celular — Malha Hexagonal")
 st.set_page_config(page_title="Cobertura Celular", page_icon="📡")
 
 with st.sidebar:
@@ -140,7 +137,7 @@ ax.set_xlim(min(all_x)-pad, max(all_x)+pad)
 ax.set_ylim(min(all_y)-pad, max(all_y)+pad)
 ax.set_aspect('equal')
 ax.axis('off')
-#ax.set_title(f"Cluster N={N}", fontsize=11)
+
 
 # ── Legenda ───────────────────────────────────────────────────────────
 legend_handles = []
