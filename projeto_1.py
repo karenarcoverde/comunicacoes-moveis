@@ -54,7 +54,7 @@ def get_cochannel(N):
     params = {3: (1,1), 4: (2,0), 7: (2,1)}
     i0, j0 = params[N]
     def rot60(i, j):
-        return (i - j, i)
+        return (-j, i + j)
     translations = []
     vi, vj = i0, j0
     for _ in range(6):
@@ -72,13 +72,6 @@ with st.sidebar:
     S     = st.number_input(" Número de canais totais", min_value=1, max_value=2000, value=395, step=1)
     A     = st.number_input("Tráfego oferecido (Erlangs)", min_value=0.1, max_value=5000.0, value=100.0, step=1.0)
     alpha = st.slider("Não-linearidade do PA da BS (fator de compressão de ganho)", 1.0, 6.0, 3.0, 0.5)
-
-# ── Cálculos ──────────────────────────────────────────────────────────
-k        = S // N
-A_cell   = A / N
-bloqueio = erlang_b(A_cell, k)
-Q        = math.sqrt(3 * N)
-SIR_dB   = 10 * math.log10(Q**4 / 6)
 
 # ── Malha hexagonal ───────────────────────────────────────────────────
 cluster_cells = get_cluster_cells(N)
