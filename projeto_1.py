@@ -200,11 +200,11 @@ with tab2:
         if (i,j) in cluster_set:
             patch = RegularPolygon((cx,cy),6,radius=hex_r,orientation=0,facecolor=cell_color[(i,j)],edgecolor="white",linewidth=1.8,alpha=0.35)
             ax2.add_patch(patch)
-            ax2.text(cx,cy,str(cluster_index[(i,j)]),ha="center",va="center",fontsize=9,fontweight="bold",color="black")
+            ax2.text(cx,cy,str(cluster_index[(i,j)]),ha="center",va="center",fontsize=9,fontweight="bold",color="white")
         elif (i,j) in cochannel_map:
             patch = RegularPolygon((cx,cy),6,radius=hex_r,orientation=0,facecolor="white",edgecolor="red",linewidth=1.2,alpha=0.25)
             ax2.add_patch(patch)
-            ax2.text(cx,cy,str(cochannel_map[(i,j)]),ha="center",va="center",fontsize=8,fontweight="bold",color="red")
+            ax2.text(cx,cy,str(cochannel_map[(i,j)]),ha="center",va="center",fontsize=8,fontweight="bold",color="white")
 
     all_x = [v[0] for v in grid_centers.values()]
     all_y = [v[1] for v in grid_centers.values()]
