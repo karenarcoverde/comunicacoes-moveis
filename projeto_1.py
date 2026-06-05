@@ -53,8 +53,10 @@ def get_cluster_cells(N):
 def get_cochannel(N):
     params = {3: (1,1), 4: (2,0), 7: (2,1)}
     i0, j0 = params[N]
+
     def rot60(i, j):
         return (-j, i + j)
+
     translations = []
     vi, vj = i0, j0
     for _ in range(6):
@@ -77,51 +79,74 @@ with st.sidebar:
 cluster_cells = get_cluster_cells(N)
 cluster_set   = set(cluster_cells)
 translations  = get_cochannel(N)
+grid_centers  = build_grid(8, R)
 
-cochannel_set = set()
-for ti, tj in translations:
-    cochannel_set.add((ti, tj))
+COLORS = ["#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f", "#edc948", "#b07aa1"]
 
-grid_centers = build_grid(8, R)
+# índice e cor de cada célula do cluster
+cluster_index = {cell: idx + 1 for idx, cell in enumerate(cluster_cells)}
+cell_color = {cell: COLORS[idx % len(COLORS)] for idx, cell in enumerate(cluster_cells)}
 
-COLORS = ["#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#b07aa1"]
-cell_color = {cell: COLORS[i % len(COLORS)] for i, cell in enumerate(cluster_cells)}
+# gerar mapa de células co-canais:
+# cada célula do cluster terá suas réplicas co-canais identificadas com o mesmo número
+cochannel_map = {}  # {(i,j): label}
+cochannel_color = {}  # {(i,j): color}
 
+for cell in cluster_cells:
+    ci, cj = cell
+    label = cluster_index[cell]
+    color = cell_color[cell]
+
+    for ti, tj in translations:
+        pos = (ci + ti, cj + tj)
+        if pos not in cluster_set:
+            cochannel_map[pos] = label
+            cochannel_color[pos] = color
+
+# ── Plot ──────────────────────────────────────────────────────────────
 fig, ax = plt.subplots(figsize=(8, 8))
 ax.set_facecolor("#f5f5f5")
 
 hex_r = R * 0.97
 
 for (i, j), (cx, cy) in grid_centers.items():
+
+    # células do cluster principal
     if (i, j) in cluster_set:
         fc = cell_color[(i, j)]
         ec = "white"
         lw = 1.8
-    elif (i, j) in cochannel_set:
-        fc = cell_color.get((0, 0), COLORS[0])
-        ec = "red"
-        lw = 2.0
-        patch = RegularPolygon((cx, cy), 6, radius=hex_r,
-                               orientation=0, facecolor=fc,
-                               edgecolor=ec, linewidth=lw, alpha=0.4)
+
+        patch = RegularPolygon(
+            (cx, cy), 6, radius=hex_r,
+            orientation=0, facecolor=fc,
+            edgecolor=ec, linewidth=lw
+        )
         ax.add_patch(patch)
-        ax.text(cx, cy, "CC", ha='center', va='center',
-                fontsize=7, color='red', fontweight='bold')
-        continue
-    else:
-        fc = "#cccccc"
-        ec = "#999999"
-        lw = 0.5
 
-    patch = RegularPolygon((cx, cy), 6, radius=hex_r,
-                           orientation=0, facecolor=fc,
-                           edgecolor=ec, linewidth=lw)
-    ax.add_patch(patch)
-
-    if (i, j) in cluster_set:
-        idx = cluster_cells.index((i, j)) + 1
+        idx = cluster_index[(i, j)]
         ax.text(cx, cy, str(idx), ha='center', va='center',
                 fontsize=9, fontweight='bold', color='white')
+
+    # células co-canais
+    elif (i, j) in cochannel_map:
+        fc = cochannel_color[(i, j)]
+        ec = "red"
+        lw = 2.0
+
+        patch = RegularPolygon(
+            (cx, cy), 6, radius=hex_r,
+            orientation=0, facecolor=fc,
+            edgecolor=ec, linewidth=lw, alpha=0.45
+        )
+        ax.add_patch(patch)
+
+        ax.text(cx, cy, str(cochannel_map[(i, j)]), ha='center', va='center',
+                fontsize=9, fontweight='bold', color='red')
+
+    # remove as células cinzas
+    else:
+        continue
 
 all_x = [v[0] for v in grid_centers.values()]
 all_y = [v[1] for v in grid_centers.values()]
@@ -131,21 +156,26 @@ ax.set_ylim(min(all_y)-pad, max(all_y)+pad)
 ax.set_aspect('equal')
 ax.axis('off')
 
-
 # ── Legenda ───────────────────────────────────────────────────────────
 legend_handles = []
 for idx, cell in enumerate(cluster_cells):
     legend_handles.append(
-        mpatches.Patch(facecolor=COLORS[idx % len(COLORS)], edgecolor="white",
-                       label=f"Célula {idx + 1} (cluster)")
+        mpatches.Patch(
+            facecolor=COLORS[idx % len(COLORS)],
+            edgecolor="white",
+            label=f"Célula {idx + 1} (cluster / co-canal)"
+        )
     )
+
 legend_handles.append(
-    mpatches.Patch(facecolor=cell_color.get((0, 0), COLORS[0]), edgecolor="red",
-                   linewidth=2, alpha=0.4, label="Célula co-canal (CC)")
+    mpatches.Patch(
+        facecolor="white",
+        edgecolor="red",
+        linewidth=2,
+        label="Célula co-canal do cluster"
+    )
 )
-legend_handles.append(
-    mpatches.Patch(facecolor="#cccccc", edgecolor="#999999", label="Outras células")
-)
+
 ax.legend(handles=legend_handles, loc="lower right", fontsize=8,
           framealpha=0.9, edgecolor="#aaaaaa")
 
