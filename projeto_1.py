@@ -547,7 +547,7 @@ with tab2:
         cmap=cmap_sir,
         norm=norm_sir,
         s=5,
-        marker="s",
+        marker="o",
         alpha=0.9
     )
 
@@ -632,7 +632,7 @@ with tab2:
 
         st.dataframe(
             df_tabela,
-            use_container_width=True,
+            width='stretch',
             hide_index=True
         )
 
