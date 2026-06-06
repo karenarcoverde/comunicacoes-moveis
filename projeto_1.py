@@ -609,7 +609,7 @@ with tab2:
         textcoords="offset points",         # deslocamento fixo na tela
         arrowprops=dict(
             arrowstyle="->",
-            color="white",
+            color="black",
             lw=2
         ),
         zorder=20
