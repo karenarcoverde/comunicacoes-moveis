@@ -716,15 +716,6 @@ with tab2:
 with tab3:
     st.subheader("Espectro de transmissão real da BS")
 
-    st.markdown(
-        """
-        Esta aba mostra, de forma qualitativa, o espectro transmitido pela estação rádio-base.
-        O aumento da não-linearidade do PA provoca espalhamento espectral e surgimento de
-        componentes de terceira ordem próximas à banda principal, podendo invadir as bandas
-        de guarda.
-        """
-    )
-
     # Canais por célula
     canais_por_celula = S // N
 
@@ -883,18 +874,3 @@ with tab3:
 
     st.pyplot(fig3, width='stretch')
     plt.close(fig3)
-
-    if alpha <= 2.0:
-        st.success(
-            "O PA está operando próximo da região linear. O espalhamento espectral é pequeno."
-        )
-
-    elif alpha <= 4.0:
-        st.warning(
-            "O PA apresenta não-linearidade moderada. Já é possível observar produtos de terceira ordem próximos às bandas de guarda."
-        )
-
-    else:
-        st.error(
-            "O PA está fortemente não-linear. Os produtos de terceira ordem invadem significativamente as bandas de guarda."
-        )
