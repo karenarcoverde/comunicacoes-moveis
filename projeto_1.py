@@ -358,7 +358,7 @@ with st.sidebar:
     )
 
 
-tab1, tab2 = st.tabs(["Malha Hexagonal", "REM CCI"])
+tab1, tab2, tab3 = st.tabs(["Malha Hexagonal", "REM CCI", "PA"])
 
 n_path = 4
 
@@ -708,4 +708,193 @@ with tab2:
     else:
         st.warning(
             "Não foram encontrados pontos válidos de SIR dentro da célula selecionada."
+        )
+
+# ──────────────────────────────────────────────────────────────────────
+# TAB 3 — ESPECTRO DE TRANSMISSÃO REAL DA BS
+# ──────────────────────────────────────────────────────────────────────
+with tab3:
+    st.subheader("Espectro de transmissão real da BS")
+
+    st.markdown(
+        """
+        Esta aba mostra, de forma qualitativa, o espectro transmitido pela estação rádio-base.
+        O aumento da não-linearidade do PA provoca espalhamento espectral e surgimento de
+        componentes de terceira ordem próximas à banda principal, podendo invadir as bandas
+        de guarda.
+        """
+    )
+
+    # Canais por célula
+    canais_por_celula = S // N
+
+    # Frequência normalizada
+    freq = np.linspace(-1.2, 1.2, 3000)
+
+    # Nível de não-linearidade normalizado entre 0 e 1
+    nivel_nao_linear = (alpha - 1.0) / (6.0 - 1.0)
+
+    # Banda principal ideal da BS
+    banda_principal = np.exp(-(freq / 0.42) ** 10)
+
+    # Pequena ondulação dentro da banda principal, associada ao número de canais por célula
+    ondulacao = 1 + 0.03 * np.sin(2 * np.pi * canais_por_celula * freq)
+
+    sinal_principal = banda_principal * ondulacao
+
+    # Espalhamento espectral causado pela saturação do PA
+    espalhamento_esq = np.exp(-((freq + 0.58) / 0.16) ** 2)
+    espalhamento_dir = np.exp(-((freq - 0.58) / 0.16) ** 2)
+
+    espalhamento = nivel_nao_linear * 0.12 * (
+        espalhamento_esq + espalhamento_dir
+    )
+
+    # Produtos de terceira ordem próximos às bandas de guarda
+    produto_3ordem_esq = np.exp(-((freq + 0.72) / 0.05) ** 2)
+    produto_3ordem_dir = np.exp(-((freq - 0.72) / 0.05) ** 2)
+
+    produtos_3ordem = nivel_nao_linear * 0.18 * (
+        produto_3ordem_esq + produto_3ordem_dir
+    )
+
+    # Piso mínimo apenas para permitir escala em dB
+    piso = 1e-8
+
+    # Espectro ideal e real
+    espectro_ideal = banda_principal + piso
+    espectro_real = sinal_principal + espalhamento + produtos_3ordem + piso
+
+    # Conversão para dB relativo
+    espectro_ideal_db = 10 * np.log10(espectro_ideal / np.max(espectro_ideal))
+    espectro_real_db = 10 * np.log10(espectro_real / np.max(espectro_ideal))
+
+    # Figura
+    fig3, ax3 = plt.subplots(figsize=(10, 5), dpi=100)
+    ax3.set_facecolor("#f8f8f8")
+
+    # Regiões do gráfico
+    ax3.axvspan(
+        -0.50,
+        0.50,
+        alpha=0.10,
+        color="#378ADD",
+        label="Banda útil da BS"
+    )
+
+    ax3.axvspan(
+        -0.80,
+        -0.50,
+        alpha=0.12,
+        color="#E24B4A",
+        label="Bandas de guarda"
+    )
+
+    ax3.axvspan(
+        0.50,
+        0.80,
+        alpha=0.12,
+        color="#E24B4A"
+    )
+
+    ax3.axvspan(
+        -1.20,
+        -0.80,
+        alpha=0.06,
+        color="gray",
+        label="Região adjacente"
+    )
+
+    ax3.axvspan(
+        0.80,
+        1.20,
+        alpha=0.06,
+        color="gray"
+    )
+
+    # Curvas
+    ax3.plot(
+        freq,
+        espectro_ideal_db,
+        linestyle="--",
+        linewidth=2,
+        color="#444444",
+        label="Espectro ideal"
+    )
+
+    ax3.plot(
+        freq,
+        espectro_real_db,
+        linewidth=2.2,
+        color="#E24B4A",
+        label="Espectro real com PA não-linear"
+    )
+
+    # Destaque dos produtos de terceira ordem
+    ax3.annotate(
+        "Produto de 3ª ordem",
+        xy=(-0.72, espectro_real_db[np.argmin(np.abs(freq + 0.72))]),
+        xytext=(-1.05, -12),
+        arrowprops=dict(arrowstyle="->", lw=1.5),
+        fontsize=9
+    )
+
+    ax3.annotate(
+        "Produto de 3ª ordem",
+        xy=(0.72, espectro_real_db[np.argmin(np.abs(freq - 0.72))]),
+        xytext=(0.82, -12),
+        arrowprops=dict(arrowstyle="->", lw=1.5),
+        fontsize=9
+    )
+
+    ax3.text(
+        0,
+        -4,
+        "Banda útil",
+        ha="center",
+        fontsize=9,
+        color="#1a5fa8"
+    )
+
+    ax3.text(
+        -0.65,
+        -35,
+        "Guarda",
+        ha="center",
+        fontsize=9,
+        color="#a32d2d"
+    )
+
+    ax3.text(
+        0.65,
+        -35,
+        "Guarda",
+        ha="center",
+        fontsize=9,
+        color="#a32d2d"
+    )
+
+    ax3.set_xlabel("Frequência normalizada")
+    ax3.set_ylabel("Potência relativa [dB]")
+    ax3.set_xlim(-1.2, 1.2)
+    ax3.set_ylim(-80, 5)
+    ax3.grid(True, alpha=0.3)
+    ax3.legend(fontsize=8, loc="lower center", ncol=2)
+
+    st.pyplot(fig3, width='stretch')
+    plt.close(fig3)
+
+    if alpha <= 2.0:
+        st.success(
+            "O PA está operando próximo da região linear. O espalhamento espectral é pequeno."
+        )
+
+    elif alpha <= 4.0:
+        st.warning(
+            "O PA apresenta não-linearidade moderada. Já é possível observar produtos de terceira ordem próximos às bandas de guarda."
+        )
+
+    else:
+        st.error(
+            "O PA está fortemente não-linear. Os produtos de terceira ordem invadem significativamente as bandas de guarda."
         )
