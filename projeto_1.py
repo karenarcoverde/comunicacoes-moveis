@@ -7,6 +7,13 @@ import numpy as np
 from matplotlib.colors import Normalize
 from matplotlib.path import Path
 import pandas as pd
+import tempfile
+from streamlit_image_coordinates import streamlit_image_coordinates
+
+
+# ── Função para converter índice em letra ─────────────────────────────
+def label_letra(idx):
+    return chr(ord("A") + idx)
 
 
 # ── Erlang-B ──────────────────────────────────────────────────────────
@@ -153,8 +160,6 @@ def find_serving_cell(x, y, visible_cells, grid_centers, hex_r):
 
 # ──────────────────────────────────────────────────────────────────────
 # CACHE DO REM
-# Os parâmetros _R e _n_path começam com "_", então NÃO entram na chave
-# do cache do Streamlit. Assim, os pontos da SIR só recalculam quando N muda.
 # ──────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Calculando pontos da SIR do REM...")
 def calcular_dados_rem_cache(N, _R, _n_path):
@@ -218,6 +223,7 @@ def calcular_dados_rem_cache(N, _R, _n_path):
     all_x = [v[0] for v in grid_centers.values()]
     all_y = [v[1] for v in grid_centers.values()]
 
+    
     x_min = min(all_x) - _R
     x_max = max(all_x) + _R
     y_min = min(all_y) - _R
@@ -383,7 +389,7 @@ with tab1:
     ]
 
     cluster_index = {
-        cell: idx + 1
+        cell: idx
         for idx, cell in enumerate(cluster_cells)
     }
 
@@ -397,7 +403,7 @@ with tab1:
 
     for cell in cluster_cells:
         ci, cj = cell
-        label = cluster_index[cell]
+        label = label_letra(cluster_index[cell])
         color = cell_color[cell]
 
         for ti, tj in translations:
@@ -413,7 +419,6 @@ with tab1:
     hex_r = R * 0.97
 
     for (i, j), (cx, cy) in grid_centers.items():
-
         if (i, j) in cluster_set:
             patch = RegularPolygon(
                 (cx, cy),
@@ -430,7 +435,7 @@ with tab1:
             ax.text(
                 cx,
                 cy,
-                str(cluster_index[(i, j)]),
+                label_letra(cluster_index[(i, j)]),
                 ha="center",
                 va="center",
                 fontsize=9,
@@ -455,7 +460,7 @@ with tab1:
             ax.text(
                 cx,
                 cy,
-                str(cochannel_map[(i, j)]),
+                cochannel_map[(i, j)],
                 ha="center",
                 va="center",
                 fontsize=9,
@@ -477,7 +482,7 @@ with tab1:
         mpatches.Patch(
             facecolor=COLORS[idx % len(COLORS)],
             edgecolor="white",
-            label=f"Célula {idx + 1} (cluster / co-canal)"
+            label=f"Célula {label_letra(idx)} (cluster / co-canal)"
         )
         for idx in range(len(cluster_cells))
     ]
@@ -504,7 +509,7 @@ with tab1:
 
 
 # ──────────────────────────────────────────────────────────────────────
-# TAB 2 — REM CCI
+# TAB 2 — REM CCI clicável com tabela automática
 # ──────────────────────────────────────────────────────────────────────
 with tab2:
     st.subheader("REM CCI com análise por célula")
@@ -515,19 +520,12 @@ with tab2:
     cluster_set = dados_rem["cluster_set"]
     grid_centers = dados_rem["grid_centers"]
     COLORS = dados_rem["COLORS"]
-    cluster_index = dados_rem["cluster_index"]
     cell_color = dados_rem["cell_color"]
     cochannel_map = dados_rem["cochannel_map"]
     visible_cells = dados_rem["visible_cells"]
     cell_label_map = dados_rem["cell_label_map"]
     rem_display_number = dados_rem["rem_display_number"]
-    number_to_cell = dados_rem["number_to_cell"]
     hex_r = dados_rem["hex_r"]
-
-    x_min = dados_rem["x_min"]
-    x_max = dados_rem["x_max"]
-    y_min = dados_rem["y_min"]
-    y_max = dados_rem["y_max"]
 
     rem_x = dados_rem["rem_x"]
     rem_y = dados_rem["rem_y"]
@@ -537,22 +535,21 @@ with tab2:
     sir_vmin = dados_rem["sir_vmin"]
     sir_vmax = dados_rem["sir_vmax"]
 
-    selected_visual_number = st.selectbox(
-        "Escolha a célula para atualizar a tabela e destacar no REM",
-        list(number_to_cell.keys()),
-        index=0,
-        format_func=lambda x: f"Célula {x}"
-    )
+    # ── Inicializa célula selecionada na sessão
+    if "selected_rem_cell" not in st.session_state:
+        st.session_state.selected_rem_cell = visible_cells[0]
 
-    selected_cell = number_to_cell[selected_visual_number]
-    selected_logical_label = cell_label_map[selected_cell]
+    # Se mudar N/R e a célula antiga não existir mais, reseta
+    if st.session_state.selected_rem_cell not in visible_cells:
+        st.session_state.selected_rem_cell = visible_cells[0]
 
+    # ── Figura do REM
+    selected_cell = st.session_state.selected_rem_cell
     fig2, ax2 = plt.subplots(figsize=(9, 9), dpi=100)
     ax2.set_facecolor("#f5f5f5")
 
     # Desenha hexágonos de fundo
     for (i, j), (cx, cy) in grid_centers.items():
-
         if (i, j) in cluster_set:
             patch = RegularPolygon(
                 (cx, cy),
@@ -564,13 +561,10 @@ with tab2:
                 linewidth=1.8,
                 alpha=0.35
             )
-
             ax2.add_patch(patch)
-
         elif (i, j) in cochannel_map:
             logical_label = cochannel_map[(i, j)]
             color = COLORS[(logical_label - 1) % len(COLORS)]
-
             patch = RegularPolygon(
                 (cx, cy),
                 6,
@@ -581,103 +575,111 @@ with tab2:
                 linewidth=1.2,
                 alpha=0.20
             )
-
             ax2.add_patch(patch)
 
-    cmap_sir = plt.colormaps["turbo"]
-    norm_sir = Normalize(vmin=sir_vmin, vmax=sir_vmax)
-
-    sc = ax2.scatter(
-        rem_x,
-        rem_y,
-        c=rem_sir,
-        cmap=cmap_sir,
-        norm=norm_sir,
-        s=5,
-        marker="o",
-        alpha=0.9
-    )
-
-    # seta apontando para a célula selecionada, sem depender de R
-    selected_cx, selected_cy = grid_centers[selected_cell]
-
-    ax2.annotate(
-        "",
-        xy=(selected_cx, selected_cy),      # ponto final da seta: centro da célula
-        xycoords="data",                    # centro da célula em coordenadas do mapa
-        xytext=(35, 35),                    # início da seta em pontos, não em km
-        textcoords="offset points",         # deslocamento fixo na tela
-        arrowprops=dict(
-            arrowstyle="->",
-            color="black",
-            lw=2
-        ),
-        zorder=20
-    )
-
-    # Números no REM
+    # Letras lógicas no REM
     for cell in visible_cells:
         cx, cy = grid_centers[cell]
-        numero_visual = rem_display_number[cell]
-
+        letra_logica = label_letra(cell_label_map[cell] - 1)
         ax2.text(
             cx,
             cy,
-            str(numero_visual),
+            letra_logica,
             ha="center",
             va="center",
-            fontsize=9,
+            fontsize=10,
             fontweight="bold",
             color="white",
             zorder=10
         )
 
-    ax2.set_xlim(x_min, x_max)
-    ax2.set_ylim(y_min, y_max)
+    # Destaque da célula selecionada
+    cx, cy = grid_centers[selected_cell]
+    highlight = RegularPolygon(
+        (cx, cy),
+        6,
+        radius=hex_r * 1.08,
+        orientation=0,
+        facecolor="none",
+        edgecolor="red",
+        linewidth=2.8,
+        zorder=30
+    )
+    ax2.add_patch(highlight)
+
+    # Scatter do SIR
+    sc = ax2.scatter(
+        rem_x,
+        rem_y,
+        c=rem_sir,
+        cmap=plt.colormaps["turbo"],
+        norm=Normalize(vmin=sir_vmin, vmax=sir_vmax),
+        s=5,
+        marker="o",
+        alpha=0.9
+    )
+
+    ax2.set_xlim(min([v[0] for v in grid_centers.values()]) - R * 0.3,
+                 max([v[0] for v in grid_centers.values()]) + R * 0.3)
+    ax2.set_ylim(min([v[1] for v in grid_centers.values()]) - R * 0.3,
+                 max([v[1] for v in grid_centers.values()]) + R * 0.3)
     ax2.set_aspect("equal")
     ax2.axis("off")
 
-    cbar = fig2.colorbar(
-        sc,
-        ax=ax2,
-        fraction=0.03,
-        pad=0.02
-    )
-
+    cbar = fig2.colorbar(sc, ax=ax2, fraction=0.03, pad=0.02)
     cbar.set_label("SIR [dB]", fontsize=9)
-
     valores_barra = cbar.get_ticks()
+    sir_min_db = valores_barra[1] if len(valores_barra) > 1 else sir_vmin
 
-    if len(valores_barra) > 1:
-        sir_min_db = valores_barra[1]
-    else:
-        sir_min_db = sir_vmin
+    # ── REM clicável
+    fig2.canvas.draw()
+    fig_width, fig_height = fig2.canvas.get_width_height()
+    ax_bbox = ax2.get_window_extent()
 
-    st.pyplot(fig2, width="stretch")
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmpfile:
+        fig2.savefig(tmpfile.name, dpi=100, bbox_inches=None)
+        tmpfile_path = tmpfile.name
+
+    click = streamlit_image_coordinates(tmpfile_path, key="rem_click", use_column_width=True)
+
+    if click is not None:
+        click_x = click["x"]
+        click_y = click["y"]
+        scale_x = fig_width / click["width"]
+        scale_y = fig_height / click["height"]
+        display_x = click_x * scale_x
+        display_y = fig_height - click_y * scale_y
+
+        if ax_bbox.x0 <= display_x <= ax_bbox.x1 and ax_bbox.y0 <= display_y <= ax_bbox.y1:
+            data_x, data_y = ax2.transData.inverted().transform((display_x, display_y))
+            clicked_cell = find_serving_cell(data_x, data_y, visible_cells, grid_centers, hex_r)
+            if clicked_cell is not None:
+                if clicked_cell != st.session_state.selected_rem_cell:
+                    st.session_state.selected_rem_cell = clicked_cell
+                    st.rerun()
+
     plt.close(fig2)
 
-    # ── Tabela capacidade célula selecionada ──────────────────────────
-    valores_sir_celula = np.array(sir_por_celula[selected_cell])
+    # ── Atualiza variáveis da tabela após clique
+    selected_cell = st.session_state.selected_rem_cell
+    selected_visual_number = rem_display_number[selected_cell]
+    selected_logical_label = cell_label_map[selected_cell]
+    selected_logical_letter = label_letra(selected_logical_label - 1)
 
+    # ── Tabela baseada na célula selecionada
+    valores_sir_celula = np.array(sir_por_celula[selected_cell])
     if len(valores_sir_celula) > 0:
         C_teorico = S // N
-
         fracao_critica = np.mean(valores_sir_celula < sir_min_db)
-        fracao_util = 1.0 - fracao_critica
-
-        C_efetivo = max(1, int(C_teorico * fracao_util))
-
+        C_efetivo = max(1, int(C_teorico*(1-fracao_critica)))
         B_teorico = erlang_b(A, C_teorico)
         B_efetivo = erlang_b(A, C_efetivo)
 
-        st.markdown(
-            f"### Validação da capacidade com Erlang-B e SIR — Célula {selected_visual_number}"
-        )
+        st.markdown(f"### Validação da capacidade com Erlang-B e SIR — Célula {selected_logical_letter}")
 
         tabela_capacidade = [
             {
-                "Número no REM": selected_visual_number,
-                "Célula lógica": f"Célula {selected_logical_label}",
+                "Célula": f"{selected_logical_letter}",
                 "Tipo": "Cluster principal" if selected_cell in cluster_set else "Co-canal",
                 "Cenário": "Antes — capacidade teórica",
                 "Critério usado": "Apenas canais disponíveis",
@@ -686,8 +688,7 @@ with tab2:
                 "Probabilidade de bloqueio de Erlang-B": f"{100 * B_teorico:.2f}%"
             },
             {
-                "Número no REM": selected_visual_number,
-                "Célula lógica": f"Célula {selected_logical_label}",
+                "Célula": f"{selected_logical_letter}",
                 "Tipo": "Cluster principal" if selected_cell in cluster_set else "Co-canal",
                 "Cenário": "Depois — capacidade efetiva",
                 "Critério usado": f"SIR mínima = {sir_min_db:.1f} dB",
@@ -696,19 +697,9 @@ with tab2:
                 "Probabilidade de bloqueio de Erlang-B": f"{100 * B_efetivo:.2f}%"
             }
         ]
-
-        df_tabela = pd.DataFrame(tabela_capacidade)
-
-        st.dataframe(
-            df_tabela,
-            width="stretch",
-            hide_index=True
-        )
-
+        st.dataframe(pd.DataFrame(tabela_capacidade), width="stretch", hide_index=True)
     else:
-        st.warning(
-            "Não foram encontrados pontos válidos de SIR dentro da célula selecionada."
-        )
+        st.warning("Não foram encontrados pontos válidos de SIR dentro da célula selecionada.")
 
 # ──────────────────────────────────────────────────────────────────────
 # TAB 3 — ESPECTRO DE TRANSMISSÃO REAL DA BS
@@ -716,24 +707,18 @@ with tab2:
 with tab3:
     st.subheader("Espectro de transmissão real da BS")
 
-    # Canais por célula
     canais_por_celula = S // N
 
-    # Frequência normalizada
     freq = np.linspace(-1.2, 1.2, 3000)
 
-    # Nível de não-linearidade normalizado entre 0 e 1
     nivel_nao_linear = (alpha - 1.0) / (6.0 - 1.0)
 
-    # Banda principal ideal da BS
     banda_principal = np.exp(-(freq / 0.42) ** 10)
 
-    # Pequena ondulação dentro da banda principal, associada ao número de canais por célula
     ondulacao = 1 + 0.03 * np.sin(2 * np.pi * canais_por_celula * freq)
 
     sinal_principal = banda_principal * ondulacao
 
-    # Espalhamento espectral causado pela saturação do PA
     espalhamento_esq = np.exp(-((freq + 0.58) / 0.16) ** 2)
     espalhamento_dir = np.exp(-((freq - 0.58) / 0.16) ** 2)
 
@@ -741,7 +726,6 @@ with tab3:
         espalhamento_esq + espalhamento_dir
     )
 
-    # Produtos de terceira ordem próximos às bandas de guarda
     produto_3ordem_esq = np.exp(-((freq + 0.72) / 0.05) ** 2)
     produto_3ordem_dir = np.exp(-((freq - 0.72) / 0.05) ** 2)
 
@@ -749,22 +733,17 @@ with tab3:
         produto_3ordem_esq + produto_3ordem_dir
     )
 
-    # Piso mínimo apenas para permitir escala em dB
     piso = 1e-8
 
-    # Espectro ideal e real
     espectro_ideal = banda_principal + piso
     espectro_real = sinal_principal + espalhamento + produtos_3ordem + piso
 
-    # Conversão para dB relativo
     espectro_ideal_db = 10 * np.log10(espectro_ideal / np.max(espectro_ideal))
     espectro_real_db = 10 * np.log10(espectro_real / np.max(espectro_ideal))
 
-    # Figura
     fig3, ax3 = plt.subplots(figsize=(10, 5), dpi=100)
     ax3.set_facecolor("#f8f8f8")
 
-    # Regiões do gráfico
     ax3.axvspan(
         -0.50,
         0.50,
@@ -803,7 +782,6 @@ with tab3:
         color="gray"
     )
 
-    # Curvas
     ax3.plot(
         freq,
         espectro_ideal_db,
@@ -821,7 +799,6 @@ with tab3:
         label="Espectro real com PA não-linear"
     )
 
-    # Destaque dos produtos de terceira ordem
     ax3.annotate(
         "Produto de 3ª ordem",
         xy=(-0.72, espectro_real_db[np.argmin(np.abs(freq + 0.72))]),
@@ -872,5 +849,5 @@ with tab3:
     ax3.grid(True, alpha=0.3)
     ax3.legend(fontsize=8, loc="lower center", ncol=2)
 
-    st.pyplot(fig3, width='stretch')
+    st.pyplot(fig3, width="stretch")
     plt.close(fig3)
