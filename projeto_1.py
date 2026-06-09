@@ -628,10 +628,8 @@ with tab2:
         alpha=0.9
     )
 
-    ax2.set_xlim(min([v[0] for v in grid_centers.values()]) - R * 0.3,
-                 max([v[0] for v in grid_centers.values()]) + R * 0.3)
-    ax2.set_ylim(min([v[1] for v in grid_centers.values()]) - R * 0.3,
-                 max([v[1] for v in grid_centers.values()]) + R * 0.3)
+    ax2.set_xlim(-12, 12)  # limites fixos
+    ax2.set_ylim(-12, 12)
     ax2.set_aspect("equal")
     ax2.axis("off")
 
