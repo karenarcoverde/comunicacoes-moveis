@@ -416,7 +416,7 @@ with tab1:
     fig, ax = plt.subplots(figsize=(8, 8), dpi=100)
     ax.set_facecolor("#f5f5f5")
 
-    hex_r = R * 0.97
+    hex_r = R
 
     for (i, j), (cx, cy) in grid_centers.items():
         if (i, j) in cluster_set:
@@ -513,6 +513,15 @@ with tab1:
 # ──────────────────────────────────────────────────────────────────────
 with tab2:
     st.subheader("REM CCI com análise por célula")
+
+    # Adiciona instruções de uso
+    st.info(
+        "💡 Como usar:\n"
+        "- Clique em qualquer célula hexagonal para selecioná-la.\n"
+        "- A célula selecionada será destacada em vermelho.\n"
+        "- A tabela abaixo será automaticamente atualizada com os parâmetros dessa célula.\n"
+        "- Altere as entradas: raio, tamanho do cluster, número de canais totais e tráfego; caso seja necessário."
+    )
 
     dados_rem = calcular_dados_rem_cache(N, R, n_path)
 
@@ -706,6 +715,11 @@ with tab2:
 # ──────────────────────────────────────────────────────────────────────
 with tab3:
     st.subheader("Espectro de transmissão real da BS")
+    # Adiciona instruções de uso
+    st.info(
+        "💡 Como usar:\n"
+        "- Altere a entrada \"não-linearidade do PA da BS\" para ver mudanças na banda de guarda.\n"
+    )
 
     canais_por_celula = S // N
 
