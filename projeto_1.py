@@ -162,11 +162,11 @@ def find_serving_cell(x, y, visible_cells, grid_centers, hex_r):
 # CACHE DO REM
 # ──────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner="Calculando pontos da SIR do REM...")
-def calcular_dados_rem_cache(N, _R, _n_path):
+def calcular_dados_rem_cache(N, R, _n_path):
     cluster_cells = get_cluster_cells(N)
     cluster_set = set(cluster_cells)
     translations = get_cochannel(N)
-    grid_centers = build_grid(8, _R)
+    grid_centers = build_grid(8, R)
 
     COLORS = [
         "#4e79a7",
@@ -218,16 +218,16 @@ def calcular_dados_rem_cache(N, _R, _n_path):
         for cell, number in rem_display_number.items()
     }
 
-    hex_r = _R * 0.97
+    hex_r = R * 0.97
 
     all_x = [v[0] for v in grid_centers.values()]
     all_y = [v[1] for v in grid_centers.values()]
 
     
-    x_min = min(all_x) - _R
-    x_max = max(all_x) + _R
-    y_min = min(all_y) - _R
-    y_max = max(all_y) + _R
+    x_min = min(all_x) - R
+    x_max = max(all_x) + R
+    y_min = min(all_y) - R
+    y_max = max(all_y) + R
 
     resolution = 180
 
@@ -524,7 +524,6 @@ with tab2:
     )
 
     dados_rem = calcular_dados_rem_cache(N, R, n_path)
-
     cluster_cells = dados_rem["cluster_cells"]
     cluster_set = dados_rem["cluster_set"]
     grid_centers = dados_rem["grid_centers"]
@@ -541,6 +540,7 @@ with tab2:
     rem_sir = dados_rem["rem_sir"]
 
     sir_por_celula = dados_rem["sir_por_celula"]
+
     sir_vmin = dados_rem["sir_vmin"]
     sir_vmax = dados_rem["sir_vmax"]
 
