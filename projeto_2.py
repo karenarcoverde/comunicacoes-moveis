@@ -88,8 +88,6 @@ elif model == "Walfisch-Bertoni":
 shadow = np.random.normal(0, sigma, len(d)) # variável aleatória com média 0 e desvio padrão sigma -> distribuição gaussiana
 PL_shadow = PL + shadow
 
-# Pr = Pt - PL
-Pr = 0 - PL_shadow
 
 # -------------------------------
 # TABS
@@ -102,10 +100,10 @@ tab1, tab2 = st.tabs(["Curva de atenuação", "Constelação"])
 with tab1:
     fig, ax = plt.subplots()
 
-    ax.plot(d, Pr, label=model)
+    ax.plot(d, PL_shadow, label=model)
 
     ax.set_xlabel("Distância (m)")
-    ax.set_ylabel("Potência (dBm)")
+    ax.set_ylabel("PL (dB)")
     ax.grid()
     ax.legend()
 
