@@ -31,7 +31,7 @@ noise_figure = st.sidebar.slider("Figura de ruído (dB)", 0.0, 10.0, 5.0)
 # -------------------------------
 
 def fspl(d, f):
-    # perda de percurso (slide 7)
+    # perda de percurso PL(d0) (slide 7)
     # Gt=Gr=1 (antena isotrópica) e L=1 (sem perdas no sistema)
     c = 3e8  # velocidade da luz
     Gt=Gr=1
@@ -44,7 +44,7 @@ def fspl(d, f):
     return PL
 
 
-def log_distance(d, d0, PL0, n):
+def log_distance(d, d0, PL0, n): # PL 
     return PL0 + 10*n*np.log10(d/d0)
 
 def indoor_simple(d, f):
