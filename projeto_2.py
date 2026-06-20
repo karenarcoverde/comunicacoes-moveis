@@ -32,13 +32,15 @@ noise_figure = st.sidebar.slider("Figura de ruído (dB)", 0.0, 10.0, 5.0)
 
 def fspl(d, f):
     c = 3e8  # velocidade da luz
-    # FSPL perda de percurso no espaço livre
+    # FSPL perda de percurso na situação de LOS
     return 20*np.log10(4*np.pi*d*f/c)
+
 
 def log_distance(d, d0, PL0, n):
     return PL0 + 10*n*np.log10(d/d0)
 
 def indoor_simple(d, f):
+    # potência recebida no ponto d0 = 1m
     PL0 = fspl(1, f)
     return PL0 + 30*np.log10(d/1)
 
@@ -59,6 +61,7 @@ if model == "Log-distância":
     PL0 = fspl(1, f)
     PL = log_distance(d, 1, PL0, n=3)
 
+# outdoor
 elif model == "Hata":
     # áreas urbanas
     # altura das antenas em metros
@@ -79,12 +82,14 @@ elif model == "Hata":
 elif model == "Indoor":
     PL = indoor_simple(d, f)
 
+# outdoor
 elif model == "Walfisch-Bertoni":
     PL = walfisch_bertoni(d, f)
 
 # -------------------------------
 # SOMBREAMENTO
 # -------------------------------
+# sombreamento log-normal (árvores, prédios, morros, etc.)
 shadow = np.random.normal(0, sigma, len(d)) # variável aleatória com média 0 e desvio padrão sigma -> distribuição gaussiana
 PL_shadow = PL + shadow
 
