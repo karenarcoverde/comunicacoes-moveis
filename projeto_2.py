@@ -47,10 +47,28 @@ def fspl(d, f):
 def log_distance(d, d0, PL0, n): # PL 
     return PL0 + 10*n*np.log10(d/d0)
 
-def indoor_simple(d, f):
-    # potência recebida no ponto d0 = 1m
+def indoor_simple(d, f, floors=1):
+    # Modelo de Seidel
+    # referência em d0 = 1m
     PL0 = fspl(1, f)
-    return PL0 + 30*np.log10(d/1)
+
+    d0 = 1
+
+    # expoente indoor (valores típicos do slide)
+    # 2 a 3.5 dependendo do ambiente
+    nsf = np.where(d > d0, 2.0, 3.5)
+
+    # Floor Attenuation Factor (FAF) do slide (WiFi indoor)
+    FAF_table = {
+        1: 12.9,
+        2: 18.7,
+        3: 24.0,
+        4: 27.0
+    }
+
+    FAF = FAF_table.get(floors, 0)
+
+    return PL0 + 10*nsf*np.log10(d/d0) + FAF
 
 def walfisch_bertoni(d, f):
     return fspl(d, f) + 0.3 * 10*np.log10(d)
@@ -88,7 +106,7 @@ elif model == "Hata":
     )
 
 elif model == "Indoor":
-    PL = indoor_simple(d, f)
+    PL = indoor_simple(d, f, floors=1)
 
 # outdoor
 elif model == "Walfisch-Bertoni":
