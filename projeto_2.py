@@ -33,6 +33,7 @@ noise_figure = st.sidebar.slider("Figura de ruído (dB)", 0.0, 10.0, 5.0)
 def fspl(d, f):
     c = 3e8  # velocidade da luz
     # FSPL perda de percurso na situação de LOS
+    # Gt=Gr=1 (antena isotrópica) e L=1 (sem perdas no sistema)
     return 20*np.log10(4*np.pi*d*f/c)
 
 
@@ -58,7 +59,7 @@ d = np.linspace(1, d_tx_rx, 300)
 if model == "Log-distância":
     # n = 3 -> urbano com sombreamento
     # d0 = 1m -> distância de referência
-    PL0 = fspl(1, f)
+    PL0 = fspl(1, f) # potência recebida no ponto d0 = 1m
     PL = log_distance(d, 1, PL0, n=3)
 
 # outdoor
