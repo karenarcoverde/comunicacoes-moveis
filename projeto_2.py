@@ -1,6 +1,14 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+# -------------------------------
+# CONFIGURAÇÃO DA PÁGINA
+# -------------------------------
+st.set_page_config(
+    page_title="Modelos de propagação",
+    page_icon="📡",
+    layout="centered"
+)
 
 # -------------------------------
 # SIDEBAR (ENTRADAS)
