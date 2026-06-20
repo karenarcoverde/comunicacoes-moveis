@@ -87,7 +87,7 @@ with tab1:
     ax.plot(d*1000, -PL_shadow, label="Path Loss (dB)", alpha=0.6)
 
     ax.set_xlabel("Distância (m)")
-    ax.set_ylabel("dB / dBm")
+    ax.set_ylabel("Potência (dB / dBm)")
     ax.grid()
     ax.legend()
 
