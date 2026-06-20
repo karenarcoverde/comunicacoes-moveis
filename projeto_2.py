@@ -31,10 +31,17 @@ noise_figure = st.sidebar.slider("Figura de ruído (dB)", 0.0, 10.0, 5.0)
 # -------------------------------
 
 def fspl(d, f):
-    c = 3e8  # velocidade da luz
-    # FSPL perda de percurso na situação de LOS
+    # perda de percurso (slide 7)
     # Gt=Gr=1 (antena isotrópica) e L=1 (sem perdas no sistema)
-    return 20*np.log10(4*np.pi*d*f/c)
+    c = 3e8  # velocidade da luz
+    Gt=Gr=1
+    lam = c / f  # lambda = c/f
+
+    term = (Gt * Gr * lam**2) / ((4 * np.pi)**2 * d**2)
+
+    PL = -10 * np.log10(term)
+
+    return PL
 
 
 def log_distance(d, d0, PL0, n):
