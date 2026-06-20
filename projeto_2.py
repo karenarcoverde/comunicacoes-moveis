@@ -70,13 +70,94 @@ def indoor_simple(d, f, floors=1):
 
     return PL0 + 10*nsf*np.log10(d/d0) + FAF
 
-def walfisch_bertoni(d, f):
-    return fspl(d, f) + 0.3 * 10*np.log10(d)
+# -------------------------------
+# Walfisch-Ikegami COMPLETO (SLIDE)
+# -------------------------------
+
+def Ka(f_mhz, d_km, h_b, h_t):
+
+    delta_hb = h_t - h_b
+
+    mask_high_f = f_mhz > 2000
+    mask_far = d_km >= 0.5
+    mask_bh = h_b > h_t
+
+    Ka_high_far = 54 - 0.8 * delta_hb
+    Ka_high_near = 54 - 1.6 * delta_hb * d_km
+
+    Ka_low_far = 73 - 0.8 * delta_hb
+    Ka_low_near = 73 - 1.6 * delta_hb * d_km
+
+    Ka_high = np.where(mask_far, Ka_high_far, Ka_high_near)
+    Ka_low = np.where(mask_far, Ka_low_far, Ka_low_near)
+
+    return np.where(mask_high_f,
+                    np.where(mask_bh, 54, Ka_high),
+                    np.where(mask_bh, 71.4, Ka_low))
+
+def walfisch_ikegami(d, f, h_tx=30, h_rx=1.5, h_b=25, w=20, b=20, phi=30):
+
+    d_km = d / 1000
+    f_mhz = f / 1e6
+
+    log_d = np.log10(d_km)
+    log_f = np.log10(f_mhz)
+
+    # -----------------------------
+    # L0
+    # -----------------------------
+    L0 = 32.4 + 20*log_d + 20*log_f
+
+    # -----------------------------
+    # Lrts (vetorizado sem IF)
+    # -----------------------------
+    Lori = np.where(phi <= 35,
+                    -10 + 0.354*phi,
+            np.where(phi <= 55,
+                    2.5 + 0.075*(phi - 35),
+                    4 - 0.114*(phi - 55)))
+
+    delta_h = h_tx - h_rx
+
+    Lrts = -8.2 - 10*np.log10(w) + 20*np.log10(delta_h) + Lori
+
+    # -----------------------------
+    # Lbsh
+    # -----------------------------
+    Lbsh = np.where(h_b > h_tx,
+                    -18*np.log10(1 + delta_h),
+                    0)
+
+    # -----------------------------
+    # KA (rápido agora)
+    # -----------------------------
+    Ka_val = Ka(f_mhz, d_km, h_b, h_tx)
+
+    # -----------------------------
+    # MSD (otimizado)
+    # -----------------------------
+    Kd = 18
+    Kf = -4 + 0.7*(f_mhz/1000)
+
+    Lmsd = (
+        Lbsh
+        + Ka_val
+        + Kd*log_d
+        + Kf*log_f
+        - 9*np.log10(b)
+    )
+
+    # -----------------------------
+    # decisão NLOS
+    # -----------------------------
+    return np.where((Lrts + Lmsd) > 0,
+                    L0 + Lrts + Lmsd,
+                    L0)
 
 # -------------------------------
 # DISTÂNCIA (MANTIDO)
 # -------------------------------
-d = np.linspace(1, d_tx_rx, 300)
+d = np.linspace(1, d_tx_rx, 150)
 
 # -------------------------------
 # MODELO
@@ -110,7 +191,7 @@ elif model == "Indoor":
 
 # outdoor
 elif model == "Walfisch-Bertoni":
-    PL = walfisch_bertoni(d, f)
+    PL = walfisch_ikegami(d,f,h_tx=30,h_rx=1.5,h_b=25,w=20,b=20,phi=30)
 
 # -------------------------------
 # SOMBREAMENTO
