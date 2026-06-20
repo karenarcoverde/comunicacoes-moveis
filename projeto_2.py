@@ -56,7 +56,7 @@ d = np.linspace(1, d_tx_rx, 300)
 # MODELO
 # -------------------------------
 if model == "Log-distância":
-    # n = 3 -> urbano
+    # n = 3 -> urbano com sombreamento
     # d0 = 1m -> distância de referência
     PL0 = fspl(1, f)
     PL = log_distance(d, 1, PL0, n=3)
