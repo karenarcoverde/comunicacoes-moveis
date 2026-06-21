@@ -212,6 +212,28 @@ def compute_PL(model, d_tx_rx, f, sigma):
 d,PL = compute_PL(model, d_tx_rx, f, sigma)
 
 
+def generate_16qam_cloud(n_per_symbol=400):
+    levels = np.array([-3, -1, 1, 3])
+
+    # 16 pontos ideais
+    I_ideal = []
+    Q_ideal = []
+
+    for i in levels:
+        for q in levels:
+            I_ideal.append(i)
+            Q_ideal.append(q)
+
+    I_ideal = np.array(I_ideal)
+    Q_ideal = np.array(Q_ideal)
+
+    # repete cada símbolo várias vezes para criar a nuvem
+    I_tx = np.repeat(I_ideal, n_per_symbol)
+    Q_tx = np.repeat(Q_ideal, n_per_symbol)
+
+    return I_ideal, Q_ideal, I_tx, Q_tx
+
+
 # -------------------------------
 # TABS
 # -------------------------------
@@ -231,3 +253,55 @@ with tab1:
     ax.legend()
 
     st.pyplot(fig)
+
+with tab2:
+
+    # gera constelação ideal + várias amostras para nuvem
+    I_ideal, Q_ideal, I_tx, Q_tx = generate_16qam_cloud(n_per_symbol=400)
+
+    # -------------------------------
+    # LINK BUDGET
+    # -------------------------------
+    Pt_dBm = 30
+    Pr_dBm = Pt_dBm - PL[-1]
+
+    noise_dBm = -174 + 10*np.log10(1e6) + noise_figure
+
+    snr_db = Pr_dBm - noise_dBm
+    snr_linear = 10 ** (snr_db / 10)
+
+    # desvio do AWGN
+    noise_std = np.sqrt(1 / (2 * snr_linear))
+
+    # ruído gaussiano em I e Q
+    I_rx = I_tx + np.random.normal(0, noise_std, len(I_tx))
+    Q_rx = Q_tx + np.random.normal(0, noise_std, len(Q_tx))
+
+    # -------------------------------
+    # PLOT
+    # -------------------------------
+    fig2, ax2 = plt.subplots(figsize=(7, 7))
+
+    # pontos recebidos = nuvem
+    ax2.scatter(I_rx, Q_rx, s=4, alpha=0.6, label="Rx")
+
+    # pontos ideais transmitidos
+    ax2.scatter(
+        I_ideal, Q_ideal,
+        s=45,
+        facecolors="none",
+        edgecolors="blue",
+        linewidths=1.0,
+        label="Tx"
+    )
+
+    ax2.set_xlabel("I")
+    ax2.set_ylabel("Q")
+    ax2.grid()
+
+    ax2.set_xlim(-4.5, 4.5)
+    ax2.set_ylim(-4.5, 4.5)
+
+    ax2.legend()
+
+    st.pyplot(fig2)
