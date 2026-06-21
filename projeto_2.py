@@ -71,7 +71,7 @@ def indoor_simple(d, f, floors=1):
     return PL0 + 10*nsf*np.log10(d/d0) + FAF
 
 # -------------------------------
-# Walfisch-Ikegami COMPLETO (SLIDE)
+# Walfisch-Ikegami NLOS (SLIDE)
 # -------------------------------
 
 def Ka(f_mhz, d_km, h_b, h_t):
@@ -154,51 +154,62 @@ def walfisch_ikegami(d, f, h_tx=30, h_rx=1.5, h_b=25, w=20, b=20, phi=30):
                     L0 + Lrts + Lmsd,
                     L0)
 
-# -------------------------------
+
+
+@st.cache_data
+def compute_PL(model, d_tx_rx, f, sigma):
+    # -------------------------------
 # DISTÂNCIA (MANTIDO)
 # -------------------------------
-d = np.linspace(1, d_tx_rx, 150)
+    d = np.linspace(1, d_tx_rx, 150)
+
+    # -------------------------------
+    # MODELO
+    # -------------------------------
+    if model == "Log-distância":
+        # n = 3 -> urbano com sombreamento
+        # d0 = 1m -> distância de referência
+        PL0 = fspl(1, f) # potência recebida no ponto d0 = 1m
+        PL = log_distance(d, 1, PL0, n=3)
+
+    # outdoor
+    elif model == "Hata":
+        # áreas urbanas
+        # altura das antenas em metros
+        h_tx = 30
+        h_rx = 1.5
+
+        # função de correção a(h_rx)
+        a_hrx = (1.1*np.log10(f) - 0.7)*h_rx - (1.56*np.log10(f) - 0.8)
+
+        PL = (
+            69.55
+            + 26.16*np.log10(f)
+            - 13.82*np.log10(h_tx)
+            - a_hrx
+            + (44.9 - 6.55*np.log10(h_tx)) * np.log10(d)
+        )
+
+    elif model == "Indoor":
+        PL = indoor_simple(d, f, floors=1)
+
+    # outdoor
+    elif model == "Walfisch-Bertoni":
+        PL = walfisch_ikegami(d,f,h_tx=30,h_rx=1.5,h_b=25,w=20,b=20,phi=30)
+
+    # -------------------------------
+    # SOMBREAMENTO
+    # -------------------------------
+    # sombreamento log-normal (árvores, prédios, morros, etc.)
+    shadow = np.random.normal(0, sigma, len(d)) # variável aleatória com média 0 e desvio padrão sigma -> distribuição gaussiana
+    PL_shadow = PL + shadow
+
+    return d,PL_shadow
 
 # -------------------------------
-# MODELO
+# CACHE LOGIC
 # -------------------------------
-if model == "Log-distância":
-    # n = 3 -> urbano com sombreamento
-    # d0 = 1m -> distância de referência
-    PL0 = fspl(1, f) # potência recebida no ponto d0 = 1m
-    PL = log_distance(d, 1, PL0, n=3)
-
-# outdoor
-elif model == "Hata":
-    # áreas urbanas
-    # altura das antenas em metros
-    h_tx = 30
-    h_rx = 1.5
-
-    # função de correção a(h_rx)
-    a_hrx = (1.1*np.log10(f) - 0.7)*h_rx - (1.56*np.log10(f) - 0.8)
-
-    PL = (
-        69.55
-        + 26.16*np.log10(f)
-        - 13.82*np.log10(h_tx)
-        - a_hrx
-        + (44.9 - 6.55*np.log10(h_tx)) * np.log10(d)
-    )
-
-elif model == "Indoor":
-    PL = indoor_simple(d, f, floors=1)
-
-# outdoor
-elif model == "Walfisch-Bertoni":
-    PL = walfisch_ikegami(d,f,h_tx=30,h_rx=1.5,h_b=25,w=20,b=20,phi=30)
-
-# -------------------------------
-# SOMBREAMENTO
-# -------------------------------
-# sombreamento log-normal (árvores, prédios, morros, etc.)
-shadow = np.random.normal(0, sigma, len(d)) # variável aleatória com média 0 e desvio padrão sigma -> distribuição gaussiana
-PL_shadow = PL + shadow
+d,PL = compute_PL(model, d_tx_rx, f, sigma)
 
 
 # -------------------------------
@@ -212,7 +223,7 @@ tab1, tab2 = st.tabs(["Curva de atenuação", "Constelação"])
 with tab1:
     fig, ax = plt.subplots()
 
-    ax.plot(d, PL_shadow, label=model)
+    ax.plot(d, PL, label=model)
 
     ax.set_xlabel("Distância (m)")
     ax.set_ylabel("PL (dB)")
