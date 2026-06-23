@@ -26,7 +26,7 @@ M = st.sidebar.selectbox(
     [4, 16, 64]
 )
 
-d_tx_rx = st.sidebar.slider("Distância Tx-Rx (m)", 1, 5000, 1000)
+d_tx_rx = st.sidebar.slider("Distância Tx-Rx (m)", 1, 10000, 1000)
 f = st.sidebar.slider("Frequência (GHz)", 0.5, 30.0, 2.0)
 f = f *1e9 
 sigma = st.sidebar.slider("Desvio padrão do sombreamento σ (dB)", 0.0, 12.0, 4.0)
