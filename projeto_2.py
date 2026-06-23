@@ -38,6 +38,11 @@ awgn_db = st.sidebar.slider(
     0.0, 20.0, 10.0
 )
 
+phase_noise_deg = st.sidebar.slider(
+    "Ruído de fase (graus)",
+    0.0, 20.0, 1.0
+)
+
 
 # -------------------------------
 # FUNÇÕES
@@ -231,7 +236,7 @@ d,PL = compute_PL(model, d_tx_rx, f, sigma)
 
 
 @st.cache_data
-def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
+def compute_constellation(PL_last, noise_figure, M, awgn_db, phase_noise_deg, n_symbols=4000):
 
     modem = QAMModem(M)
 
@@ -240,6 +245,8 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
 
     I_tx = symbols_tx.real
     Q_tx = symbols_tx.imag
+
+    
    
     # -------------------------------
     # LINK BUDGET (dB)
@@ -267,6 +274,15 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
     # -------------------------------
     I_rx = I_tx + np.random.normal(0, noise_std, len(I_tx))
     Q_rx = Q_tx + np.random.normal(0, noise_std, len(Q_tx))
+
+    # -------------------------------
+    # RUÍDO DE FASE
+    # -------------------------------
+    phase_noise_rad = np.deg2rad(phase_noise_deg)
+    phi = np.random.normal(0, phase_noise_rad, len(I_rx))
+    symbols_rx = (I_rx + 1j * Q_rx) * np.exp(1j * phi)
+    I_rx = symbols_rx.real
+    Q_rx = symbols_rx.imag
 
     return modem.constellation.real, modem.constellation.imag, I_rx, Q_rx
 
@@ -304,7 +320,7 @@ if tab == "Curva de atenuação":
 # TAB 2
 # -------------------------------
 else:
-    I_ideal, Q_ideal, I_rx, Q_rx = compute_constellation(PL[-1], noise_figure,M, awgn_db)
+    I_ideal, Q_ideal, I_rx, Q_rx = compute_constellation(PL[-1], noise_figure, M, awgn_db, phase_noise_deg)
 
     # -------------------------------
     # PLOT
