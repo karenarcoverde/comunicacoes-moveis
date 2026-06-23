@@ -18,7 +18,7 @@ st.set_page_config(
 # -------------------------------
 model = st.sidebar.selectbox(
     "Seleção do modelo",
-    ["Log-distância", "Hata", "Walfisch-Bertoni", "Indoor"]
+    ["Log-distância", "Walfisch-Bertoni", "Indoor"]
 )
 
 M = st.sidebar.selectbox(
@@ -186,23 +186,27 @@ def compute_PL(model, d_tx_rx, f, sigma):
         PL = log_distance(d, 1, PL0, n=3)
 
     # outdoor
-    elif model == "Hata":
-        # áreas urbanas
-        # altura das antenas em metros
-        h_tx = 30
-        h_rx = 1.5
+    # elif model == "Hata":
+        # # áreas urbanas
+        # # altura das antenas em metros
+        # h_tx = 30
+        # h_rx = 1.5
+        
+        # # conversões IMPORTANTES
+        # f_MHz = f * 1000   # GHz -> MHz
+        # d_km = d / 1000    # metros -> km
 
-        # função de correção a(h_rx)
-        a_hrx = (1.1*np.log10(f) - 0.7)*h_rx - (1.56*np.log10(f) - 0.8)
+        # # função de correção a(h_rx)
+        # a_hrx = (1.1*np.log10(f_MHz) - 0.7)*h_rx - (1.56*np.log10(f_MHz) - 0.8)
 
-        PL = (
-            69.55
-            + 26.16*np.log10(f)
-            - 13.82*np.log10(h_tx)
-            - a_hrx
-            + (44.9 - 6.55*np.log10(h_tx)) * np.log10(d)
-        )
-
+        # PL = (
+        #     69.55
+        #     + 26.16*np.log10(f_MHz)
+        #     - 13.82*np.log10(h_tx)
+        #     - a_hrx
+        #     + (44.9 - 6.55*np.log10(h_tx)) * np.log10(d_km)
+        # )
+        
     elif model == "Indoor":
         PL = indoor_simple(d, f, floors=1)
 
@@ -236,7 +240,7 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
 
     I_tx = symbols_tx.real
     Q_tx = symbols_tx.imag
-
+   
     # -------------------------------
     # LINK BUDGET (dB correto)
     # -------------------------------
@@ -250,7 +254,13 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
 
     SNR_linear = 10 ** (SNR_dB / 10)
 
-    noise_std = np.sqrt(1 / (2 * SNR_linear))
+    
+    Es = np.mean(np.abs(symbols_tx)**2)
+    noise_std = np.sqrt(Es / (2 * SNR_linear)) 
+    # SNR = Es/N0
+    #sigma^2 = N0/2
+    # sigma^2 = Es/2*SINR
+
 
     # -------------------------------
     # canal AWGN
