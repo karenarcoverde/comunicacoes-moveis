@@ -243,7 +243,7 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
     Pt_dBm = 43 # macro BS
     Pr_dBm = Pt_dBm - PL_last
 
-    # ruído base + AWGN slider + NF
+    # piso de ruído do sistema + AWGN slider + NF
     noise_dBm = -174 + 10*np.log10(1e6) + noise_figure + awgn_db
 
     SNR_dB = Pr_dBm - noise_dBm
