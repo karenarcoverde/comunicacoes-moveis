@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+from commpy.modulation import QAMModem
 
 # -------------------------------
 # CONFIGURAÇÃO DA PÁGINA
@@ -20,12 +21,18 @@ model = st.sidebar.selectbox(
     ["Log-distância", "Hata", "Walfisch-Bertoni", "Indoor"]
 )
 
+M = st.sidebar.selectbox(
+    "Modulação QAM",
+    [4, 16, 64]
+)
+
 d_tx_rx = st.sidebar.slider("Distância Tx-Rx (m)", 1, 10000, 1000)
 f = st.sidebar.slider("Frequência (GHz)", 0.5, 30.0, 2.0)
 f = f *1e9 
 sigma = st.sidebar.slider("Desvio padrão do sombreamento σ (dB)", 0.0, 12.0, 4.0)
 
 noise_figure = st.sidebar.slider("Figura de ruído (dB)", 0.0, 10.0, 5.0)
+
 
 # -------------------------------
 # FUNÇÕES
@@ -216,31 +223,40 @@ d,PL = compute_PL(model, d_tx_rx, f, sigma)
 
 
 @st.cache_data
-def compute_constellation(PL_last, noise_figure, n_per_symbol=400):
-    levels = np.array([-3, -1, 1, 3])
-    I_ideal, Q_ideal = [], []
-    for i in levels:
-        for q in levels:
-            I_ideal.append(i)
-            Q_ideal.append(q)
-    I_ideal = np.array(I_ideal)
-    Q_ideal = np.array(Q_ideal)
-    I_tx = np.repeat(I_ideal, n_per_symbol)
-    Q_tx = np.repeat(Q_ideal, n_per_symbol)
+def compute_constellation(PL_last, noise_figure, M, n_symbols=4000):
 
-    # link budget
+    modem = QAMModem(M)
+
+    # bits aleatórios
+    bits = np.random.randint(0, 2, int(np.log2(M) * n_symbols))
+
+    symbols_tx = modem.modulate(bits)
+
+    I_tx = symbols_tx.real
+    Q_tx = symbols_tx.imag
+
+    # -------------------------------
+    # LINK BUDGET (correto)
+    # -------------------------------
     Pt_dBm = 30
     Pr_dBm = Pt_dBm - PL_last
+
     noise_dBm = -174 + 10*np.log10(1e6) + noise_figure
     snr_db = Pr_dBm - noise_dBm
     snr_linear = 10 ** (snr_db / 10)
+
     noise_std = np.sqrt(1 / (2 * snr_linear))
 
+    # canal AWGN
     I_rx = I_tx + np.random.normal(0, noise_std, len(I_tx))
     Q_rx = Q_tx + np.random.normal(0, noise_std, len(Q_tx))
 
-    return I_ideal, Q_ideal, I_rx, Q_rx
+    return modem.constellation.real, modem.constellation.imag, I_rx, Q_rx
 
+def qam_limits(M):
+    m = int(np.sqrt(M))
+    lim = m - 1
+    return -(lim + 1), (lim + 1)
 
 # -------------------------------
 # TABS
@@ -270,11 +286,12 @@ if tab == "Curva de atenuação":
 
     st.pyplot(fig)
 
+
 # -------------------------------
 # TAB 2
 # -------------------------------
 else:
-    I_ideal, Q_ideal, I_rx, Q_rx = compute_constellation(PL[-1], noise_figure)
+    I_ideal, Q_ideal, I_rx, Q_rx = compute_constellation(PL[-1], noise_figure,M)
 
     # -------------------------------
     # PLOT
@@ -298,8 +315,10 @@ else:
     ax2.set_ylabel("Q")
     ax2.grid()
 
-    ax2.set_xlim(-4.5, 4.5)
-    ax2.set_ylim(-4.5, 4.5)
+    lim = qam_limits(M)
+
+    ax2.set_xlim(lim)
+    ax2.set_ylim(lim)
 
     ax2.legend()
 
