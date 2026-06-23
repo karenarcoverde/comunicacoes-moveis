@@ -33,6 +33,11 @@ sigma = st.sidebar.slider("Desvio padrão do sombreamento σ (dB)", 0.0, 12.0, 4
 
 noise_figure = st.sidebar.slider("Figura de ruído (dB)", 0.0, 10.0, 5.0)
 
+awgn_db = st.sidebar.slider(
+    "AWGN (dB)",
+    0.0, 20.0, 10.0
+)
+
 
 # -------------------------------
 # FUNÇÕES
@@ -221,33 +226,35 @@ d,PL = compute_PL(model, d_tx_rx, f, sigma)
 
 
 
-
 @st.cache_data
-def compute_constellation(PL_last, noise_figure, M, n_symbols=4000):
+def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
 
     modem = QAMModem(M)
 
-    # bits aleatórios
     bits = np.random.randint(0, 2, int(np.log2(M) * n_symbols))
-
     symbols_tx = modem.modulate(bits)
 
     I_tx = symbols_tx.real
     Q_tx = symbols_tx.imag
 
     # -------------------------------
-    # LINK BUDGET (correto)
+    # LINK BUDGET (dB correto)
     # -------------------------------
-    Pt_dBm = 30
+    Pt_dBm = 50
     Pr_dBm = Pt_dBm - PL_last
 
-    noise_dBm = -174 + 10*np.log10(1e6) + noise_figure
-    snr_db = Pr_dBm - noise_dBm
-    snr_linear = 10 ** (snr_db / 10)
+    # ruído base + AWGN slider + NF
+    noise_dBm = -174 + 10*np.log10(1e6) + noise_figure + awgn_db
 
-    noise_std = np.sqrt(1 / (2 * snr_linear))
+    SNR_dB = Pr_dBm - noise_dBm
 
+    SNR_linear = 10 ** (SNR_dB / 10)
+
+    noise_std = np.sqrt(1 / (2 * SNR_linear))
+
+    # -------------------------------
     # canal AWGN
+    # -------------------------------
     I_rx = I_tx + np.random.normal(0, noise_std, len(I_tx))
     Q_rx = Q_tx + np.random.normal(0, noise_std, len(Q_tx))
 
@@ -291,7 +298,7 @@ if tab == "Curva de atenuação":
 # TAB 2
 # -------------------------------
 else:
-    I_ideal, Q_ideal, I_rx, Q_rx = compute_constellation(PL[-1], noise_figure,M)
+    I_ideal, Q_ideal, I_rx, Q_rx = compute_constellation(PL[-1], noise_figure,M, awgn_db)
 
     # -------------------------------
     # PLOT
