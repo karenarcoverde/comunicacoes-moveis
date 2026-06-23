@@ -242,7 +242,7 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
     Q_tx = symbols_tx.imag
    
     # -------------------------------
-    # LINK BUDGET (dB correto)
+    # LINK BUDGET (dB)
     # -------------------------------
     Pt_dBm = 43 # macro BS
     Pr_dBm = Pt_dBm - PL_last
@@ -254,7 +254,7 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
 
     SNR_linear = 10 ** (SNR_dB / 10)
 
-    
+    # por símbolo
     Es = np.mean(np.abs(symbols_tx)**2)
     noise_std = np.sqrt(Es / (2 * SNR_linear)) 
     # SNR = Es/N0
@@ -276,11 +276,7 @@ def qam_limits(M):
     return -(lim + 1), (lim + 1)
 
 # -------------------------------
-# TABS
-# -------------------------------
-
-# -------------------------------
-# TABS (VERSÃO MAIS ESTÁVEL POSSÍVEL)
+# TABS 
 # -------------------------------
 tab = st.radio(
     "Selecione a visualização",
