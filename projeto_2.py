@@ -11,6 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
+
 # -------------------------------
 # SIDEBAR (ENTRADAS)
 # -------------------------------
@@ -212,37 +213,52 @@ def compute_PL(model, d_tx_rx, f, sigma):
 d,PL = compute_PL(model, d_tx_rx, f, sigma)
 
 
-def generate_16qam_cloud(n_per_symbol=400):
+
+
+@st.cache_data
+def compute_constellation(PL_last, noise_figure, n_per_symbol=400):
     levels = np.array([-3, -1, 1, 3])
-
-    # 16 pontos ideais
-    I_ideal = []
-    Q_ideal = []
-
+    I_ideal, Q_ideal = [], []
     for i in levels:
         for q in levels:
             I_ideal.append(i)
             Q_ideal.append(q)
-
     I_ideal = np.array(I_ideal)
     Q_ideal = np.array(Q_ideal)
-
-    # repete cada símbolo várias vezes para criar a nuvem
     I_tx = np.repeat(I_ideal, n_per_symbol)
     Q_tx = np.repeat(Q_ideal, n_per_symbol)
 
-    return I_ideal, Q_ideal, I_tx, Q_tx
+    # link budget
+    Pt_dBm = 30
+    Pr_dBm = Pt_dBm - PL_last
+    noise_dBm = -174 + 10*np.log10(1e6) + noise_figure
+    snr_db = Pr_dBm - noise_dBm
+    snr_linear = 10 ** (snr_db / 10)
+    noise_std = np.sqrt(1 / (2 * snr_linear))
+
+    I_rx = I_tx + np.random.normal(0, noise_std, len(I_tx))
+    Q_rx = Q_tx + np.random.normal(0, noise_std, len(Q_tx))
+
+    return I_ideal, Q_ideal, I_rx, Q_rx
 
 
 # -------------------------------
 # TABS
 # -------------------------------
-tab1, tab2 = st.tabs(["Curva de atenuação", "Constelação"])
 
 # -------------------------------
-# TAB 1 - GRÁFICO
+# TABS (VERSÃO MAIS ESTÁVEL POSSÍVEL)
 # -------------------------------
-with tab1:
+tab = st.radio(
+    "Selecione a visualização",
+    ["Curva de atenuação", "Constelação"],
+    horizontal=True
+)
+
+# -------------------------------
+# TAB 1
+# -------------------------------
+if tab == "Curva de atenuação":
     fig, ax = plt.subplots()
 
     ax.plot(d, PL, label=model)
@@ -254,28 +270,11 @@ with tab1:
 
     st.pyplot(fig)
 
-with tab2:
-
-    # gera constelação ideal + várias amostras para nuvem
-    I_ideal, Q_ideal, I_tx, Q_tx = generate_16qam_cloud(n_per_symbol=400)
-
-    # -------------------------------
-    # LINK BUDGET
-    # -------------------------------
-    Pt_dBm = 30
-    Pr_dBm = Pt_dBm - PL[-1]
-
-    noise_dBm = -174 + 10*np.log10(1e6) + noise_figure
-
-    snr_db = Pr_dBm - noise_dBm
-    snr_linear = 10 ** (snr_db / 10)
-
-    # desvio do AWGN
-    noise_std = np.sqrt(1 / (2 * snr_linear))
-
-    # ruído gaussiano em I e Q
-    I_rx = I_tx + np.random.normal(0, noise_std, len(I_tx))
-    Q_rx = Q_tx + np.random.normal(0, noise_std, len(Q_tx))
+# -------------------------------
+# TAB 2
+# -------------------------------
+else:
+    I_ideal, Q_ideal, I_rx, Q_rx = compute_constellation(PL[-1], noise_figure)
 
     # -------------------------------
     # PLOT
