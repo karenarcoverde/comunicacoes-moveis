@@ -306,7 +306,7 @@ else:
         I_ideal, Q_ideal,
         s=45,
         facecolors="none",
-        edgecolors="blue",
+        edgecolors="orange",
         linewidths=1.0,
         label="Tx"
     )
