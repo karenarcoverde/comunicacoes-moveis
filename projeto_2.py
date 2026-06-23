@@ -240,7 +240,7 @@ def compute_constellation(PL_last, noise_figure, M, awgn_db, n_symbols=4000):
     # -------------------------------
     # LINK BUDGET (dB correto)
     # -------------------------------
-    Pt_dBm = 50
+    Pt_dBm = 43 # macro BS
     Pr_dBm = Pt_dBm - PL_last
 
     # ruído base + AWGN slider + NF
