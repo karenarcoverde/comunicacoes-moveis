@@ -19,20 +19,20 @@ pip install -r requirements.txt
 
 ## Conceitos utilizados
 
-- Path loss
-- Erlang-B
-- REM
-- CCI
-- Células co-canais
-- SIR
+- Path Loss
+- Log-distance model
+- Walfisch-Bertoni model
+- Indoor propagation models
 - Link Budget
-- EVM
-- M-QAM
-- Constelação I/Q
-- SNR
-- AWGN
-- Ruído de fase
-- Figura de Ruído
-- Log-distância
-- Walfisch-Bertoni
-- Indoor
+- SNR (Signal-to-Noise Ratio)
+- AWGN (Additive White Gaussian Noise)
+- Noise Figure
+- Phase Noise
+- M-QAM (Quadrature Amplitude Modulation)
+- I/Q Constellation
+- EVM (Error Vector Magnitude)
+- SIR (Signal-to-Interference Ratio)
+- CCI (Co-Channel Interference)
+- Co-channel cells
+- REM (Radio Environment Map)
+- Erlang-B model
