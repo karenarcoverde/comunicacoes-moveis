@@ -15,6 +15,8 @@ Este repositório contém materiais, simulações e implementações desenvolvid
 Para instalar as bibliotecas necessárias, utilize o arquivo `requirements.txt`:
 pip install -r requirements.txt
 
+---
+
 ## Conceitos utilizados
 
 - Path loss
