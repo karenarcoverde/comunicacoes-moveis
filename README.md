@@ -12,7 +12,7 @@ Este repositório contém materiais, simulações e implementações desenvolvid
 
 ## Instalação das dependências
 
-Para instalar as bibliotecas necessárias, utilize o arquivo `requirements.txt`:
+Para instalar as bibliotecas necessárias, utilize o arquivo `requirements.txt`: <br>
 pip install -r requirements.txt
 
 ---
