@@ -17,6 +17,11 @@ pip install -r requirements.txt
 
 ---
 
+## Execucação do código <br>
+streamlit run projeto_2.py
+
+---
+
 ## Conceitos utilizados
 
 - Path Loss
