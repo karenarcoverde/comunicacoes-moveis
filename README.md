@@ -1,12 +1,12 @@
 # comunicacoes-moveis
 Estágio em Docência da disciplina Fundamentos de Comunicações Móveis da UFF.
 
-Versão do Python utilizada:
-Python 3.9 (64-bit)
+Versão do Python utilizada:<br>
+Python 3.9 (64-bit) <br>
 
-Versões das bibliotecas utilizadas:
-Utilizar o arquivo requirements.txt e rodar o seguinte comando:
-pip install -r requirements.txt
+Versões das bibliotecas utilizadas: <br>
+Utilizar o arquivo requirements.txt e rodar o seguinte comando: <br>
+pip install -r requirements.txt <br>
 
 Conceitos utilizados:
 - Path loss
