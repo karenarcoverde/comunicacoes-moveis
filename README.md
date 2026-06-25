@@ -6,7 +6,7 @@ Este repositório contém materiais, simulações e implementações desenvolvid
 
 ## Versão do Python
 
-- Python 3.9 (64-bit)
+- Python 3.9.0 (64-bit)
 
 ---
 
