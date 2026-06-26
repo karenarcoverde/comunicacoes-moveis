@@ -17,7 +17,7 @@ pip install -r requirements.txt
 
 ---
 
-## Execucação do código <br>
+## Execução do código <br>
 streamlit run projeto_2.py
 
 ---
