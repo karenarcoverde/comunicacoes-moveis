@@ -276,15 +276,15 @@ if tab=="Constelação":
 AMBIENTES = pd.DataFrame([
     {
         "Modelo":        "Log-distância",
-        "Ambiente":      "Suburbano"
+        "Ambiente":      "Urbano com sombreamento"
     },
     {
         "Modelo":        "Walfisch-Bertoni",
-        "Ambiente":      "Urbano denso (macro-célula)"
+        "Ambiente":      "Urbano denso (macro-célula) NLOS"
     },
     {
         "Modelo":        "Indoor",
-        "Ambiente":      "Ambiente interno (escritório)"
+        "Ambiente":      "Ambiente interno (escritórios, shoppings ou aeroportos)"
     },
 ])
 
