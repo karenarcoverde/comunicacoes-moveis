@@ -227,6 +227,7 @@ if tab=="Constelação":
         "💡 Como usar:\n"
         "- Diagrama de constelação simulado após o canal, mostrando o espalhamento dos símbolos recebidos em torno dos símbolos ideais.\n"
         "- Tx: símbolos ideais transmitidos, Rx: símbolos recebidos com ruído.\n"
+        "- Desvio padrão do sombreamento adicionado no Path loss como uma gaussiana, figura de ruído e AWGN adicionado no SNR, ruído de fase é adicionado no I/Q do RX como uma gaussiana.\n"
         "- EVM (%) = Error Vector Magnitude.\n"
         "- Altere as entradas: Modelo de propagação, modulação M-QAM, distância Tx-Rx, frequência, desvio padrão do sombreamento, figura de ruído, AWGN e ruído de fase."
     )
