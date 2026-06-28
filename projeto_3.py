@@ -136,7 +136,7 @@ pdp_db = 10 * np.log10(pdp + 1e-12)
 fig, ax = plt.subplots()
 
 ax.stem(delays, pdp_db, label=channel_ui)
-ax.axhline(noise_floor, color="red", linestyle="--", label="Noise Floor")
+ax.axhline(noise_floor, color="red", linestyle="--", label="Limiar de Ruído")
 
 ax.set_title(f"PDP - {channel_ui}")
 ax.set_xlabel("Delay (ns)")
