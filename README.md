@@ -41,3 +41,8 @@ streamlit run projeto_2.py
 - Co-channel cells
 - REM (Radio Environment Map)
 - Erlang-B model
+- TDL(Tapped Delay Line)
+- 3GPP 5G
+- RMS (RMS Delay Spread)
+- Power Delay Profile (PDP)
+- Microwaves
