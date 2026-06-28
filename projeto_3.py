@@ -11,6 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
+
 # -------------------------------
 # ENTRADAS
 # -------------------------------
@@ -28,7 +29,7 @@ channel_ui = st.sidebar.selectbox(
 
 rms_delay = st.sidebar.slider("RMS Delay Spread (ns)", 10, 1000, 150)
 
-noise_floor = st.sidebar.slider("Limiar de ruído (dB)", -120, -20, -90)
+noise_floor = st.sidebar.slider("Limiar de ruído (dB)", -120, -5, -90)
 
 # -------------------------------
 # CONVERSÕES FÍSICAS
@@ -93,26 +94,41 @@ tdl_profiles = {
     }
 }
 
-# -------------------------------
-# ESCOLHA DO CANAL
-# -------------------------------
 profile = tdl_profiles[channel_ui]
 
-delays = profile["delays"]
-powers_db = profile["powers"]
+delays = profile["delays"].astype(float)
+powers_db = profile["powers"].astype(float)
 
 # -------------------------------
-# AJUSTE RMS DELAY SPREAD (escala simples)
+# FUNÇÃO RMS REAL (3GPP)
 # -------------------------------
-scale = rms_delay / (np.sqrt(np.mean(delays**2)) + 1e-9)
+def compute_rms_delay(delays, powers_db):
+    power_linear = 10 ** (powers_db / 10)
+
+    power_linear = power_linear / np.sum(power_linear)  # energia normalizada
+
+    mean = np.sum(power_linear * delays)
+    mean2 = np.sum(power_linear * delays**2)
+
+    return np.sqrt(mean2 - mean**2)
+
+# -------------------------------
+# AJUSTE PARA RMS
+# -------------------------------
+current_rms = compute_rms_delay(delays, powers_db)
+
+scale = rms_delay / (current_rms + 1e-12)
 delays = delays * scale
 
 # -------------------------------
 # PDP (Power Delay Profile)
 # -------------------------------
 powers_linear = 10 ** (powers_db / 10)
+
 pdp = powers_linear / np.max(powers_linear)
+
 pdp_db = 10 * np.log10(pdp + 1e-12)
+
 
 # -------------------------------
 # PLOT
