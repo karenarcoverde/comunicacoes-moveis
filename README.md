@@ -48,3 +48,5 @@ streamlit run projeto_2.py
 - Microwaves
 - Level Crossing Rate (LCR)
 - Average Fade Duration (AFD)
+- Short-Time Fourier Transform (STFT)
+- Maximum Doppler shift
