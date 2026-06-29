@@ -249,7 +249,7 @@ else:
             label=f"Limiar $Z$  ($\\rho$ = {rho_val:.2f})"),
         Line2D([0], [0], color="crimson", marker='v', linestyle='None', markersize=8,
             label="level crossing rate (LCR)"),
-        Line2D([0], [0], color="crimson", lw=1.4, linestyle='--',
+        Line2D([0], [0], color="crimson", lw=1.4,
             label=r"$t_{z,i}$: average fade duration (AFD)")
     ]
 
