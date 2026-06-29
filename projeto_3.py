@@ -152,16 +152,14 @@ else:
         z = np.sqrt(I**2 + Q**2)
         return t, z
 
-    # Gera envoltória ATUAL e REFERÊNCIA
+    # Gera envoltória ATUAL
     t,     z_cur = gera_envoltoria(fd,     seed=42)
-    _,     z_ref = gera_envoltoria(FD_REF, seed=42)
     t_ms = t * 1e3
 
     # --------------------------------------------------
     # Estima σ e calcula limiares para cada configuração
     # --------------------------------------------------
     sigma_cur = np.sqrt(np.mean(z_cur**2) / 2)
-    sigma_ref = np.sqrt(np.mean(z_ref**2) / 2)
 
     rho_slider = st.slider(
         "Nível normalizado  ρ = Z / √(2σ²)",
@@ -170,16 +168,13 @@ else:
     rho_val = rho_slider
 
     Z_cur = rho_val * np.sqrt(2) * sigma_cur
-    Z_ref = rho_val * np.sqrt(2) * sigma_ref
 
     # --------------------------------------------------
     # LCR / AFD teóricos
     # --------------------------------------------------
     LCR_cur = np.sqrt(2*np.pi) * fd     * rho_val * np.exp(-rho_val**2)
-    LCR_ref = np.sqrt(2*np.pi) * FD_REF * rho_val * np.exp(-rho_val**2)
 
     AFD_cur = (np.exp(rho_val**2) - 1) / (np.sqrt(2*np.pi) * fd     * rho_val + 1e-30)
-    AFD_ref = (np.exp(rho_val**2) - 1) / (np.sqrt(2*np.pi) * FD_REF * rho_val + 1e-30)
 
     # --------------------------------------------------
     # Cruzamentos e durações de fade – envoltória ATUAL
@@ -241,11 +236,9 @@ else:
             ha="right", va="center", fontsize=11, color="crimson", fontweight="bold")
  
 
-    y_top = max(z_cur.max(), z_ref.max()) * 1.15
     ax.set_xlabel("$t$ (ms)", fontsize=12)
     ax.set_ylabel("$z(t)$", fontsize=12)
     ax.set_xlim(t_ms[0], t_ms[-1])
-    ax.set_ylim(0, y_top)
 
     legend_elements = [
         Line2D([0],[0], color="#1a5fa8", lw=1.0,  label=r"$z(t)$"),
