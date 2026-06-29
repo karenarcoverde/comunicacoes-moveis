@@ -27,16 +27,21 @@ channel_ui = st.sidebar.selectbox(
     ["TDL-A", "TDL-B", "TDL-C"]
 )
 
-rms_delay  = st.sidebar.slider("RMS Delay Spread (ns)", 10, 1000, 150)
+rms_delay   = st.sidebar.slider("RMS Delay Spread (ns)", 10, 1000, 150)
 noise_floor = st.sidebar.slider("Limiar de ruído (dB)", -120, -5, -90)
 
 # -------------------------------
 # CONVERSÕES FÍSICAS
 # -------------------------------
-v = v_kmh / 3.6
-c = 3e8
+v  = v_kmh / 3.6
+c  = 3e8
 fc = 4e9 if "Micro" in freq_band else 40e9
 f_doppler = v * fc / c
+
+# Referência fixa para comparação: 60 km/h, 4 GHz (Micro-ondas)
+V_REF  = 60 / 3.6
+FC_REF = 4e9
+FD_REF = max(V_REF * FC_REF / c, 0.1)
 
 # -------------------------------
 # TDL REAL (3GPP TR 38.901)
@@ -121,140 +126,137 @@ else:
     fd = max(f_doppler, 0.1)
 
     # --------------------------------------------------
-    # Gera envoltória de Rayleigh – modelo de Clarke
-    # z(t) = |β(t)|,  E{z²} = 2σ²  →  σ = 1/√2
+    # Gerador de envoltória de Rayleigh – modelo de Clarke
+    # Usa seed fixa para que ambas as curvas difiram apenas
+    # pela frequência Doppler, não pela realização aleatória.
     # --------------------------------------------------
-    np.random.seed(42)
-    N_sin     = 40
-    N_samples = 6000
-    sigma     = 1.0 / np.sqrt(2)          # E{z²} = 2σ² = 1
+    def gera_envoltoria(fd_sim, seed=42):
+        N_sin     = 40
+        N_samples = 6000
 
-    t = np.linspace(0, 6.0 / fd, N_samples)   # ~6 ciclos Doppler
+        # Eixo de tempo fixado pelos ciclos Doppler da REFERÊNCIA
+        # (garante que as duas curvas compartilhem o mesmo eixo t)
+        T_total = 6.0 / FD_REF
+        t = np.linspace(0, T_total, N_samples)
 
-    phi_n = np.random.uniform(0, 2*np.pi, N_sin)
-    theta_n = np.random.uniform(0, 2*np.pi, N_sin)
-    alpha_n = 2*np.pi*np.arange(1, N_sin+1) / N_sin   # ângulos de chegada uniformes
+        rng = np.random.default_rng(seed)
+        phi_n   = rng.uniform(0, 2*np.pi, N_sin)
+        theta_n = rng.uniform(0, 2*np.pi, N_sin)
+        alpha_n = 2*np.pi*np.arange(1, N_sin+1) / N_sin
 
-    I = np.sum([np.cos(2*np.pi*fd*np.cos(alpha_n[k])*t + phi_n[k])
-                for k in range(N_sin)], axis=0) / np.sqrt(N_sin)
-    Q = np.sum([np.sin(2*np.pi*fd*np.cos(alpha_n[k])*t + theta_n[k])
-                for k in range(N_sin)], axis=0) / np.sqrt(N_sin)
+        I = np.sum([np.cos(2*np.pi*fd_sim*np.cos(alpha_n[k])*t + phi_n[k])
+                    for k in range(N_sin)], axis=0) / np.sqrt(N_sin)
+        Q = np.sum([np.sin(2*np.pi*fd_sim*np.cos(alpha_n[k])*t + theta_n[k])
+                    for k in range(N_sin)], axis=0) / np.sqrt(N_sin)
 
-    z = np.sqrt(I**2 + Q**2)              # envoltória linear z(t) = |β(t)|
+        z = np.sqrt(I**2 + Q**2)
+        return t, z
 
-    # σ² estimado da simulação
-    sigma2_est = np.mean(z**2) / 2        # E{z²} = 2σ²
-    sigma_est  = np.sqrt(sigma2_est)
+    # Gera envoltória ATUAL e REFERÊNCIA
+    t,     z_cur = gera_envoltoria(fd,     seed=42)
+    _,     z_ref = gera_envoltoria(FD_REF, seed=42)
+    t_ms = t * 1e3
 
     # --------------------------------------------------
-    # Limiar Z  (como fração do RMS da envoltória)
-    # ρ = Z / √(2σ²) = Z / √(E{z²})
-    # Permite o usuário escolher ρ via slider
+    # Estima σ e calcula limiares para cada configuração
     # --------------------------------------------------
+    sigma_cur = np.sqrt(np.mean(z_cur**2) / 2)
+    sigma_ref = np.sqrt(np.mean(z_ref**2) / 2)
+
     rho_slider = st.slider(
         "Nível normalizado  ρ = Z / √(2σ²)",
         min_value=0.10, max_value=2.0, value=0.70, step=0.05
     )
+    rho_val = rho_slider
 
-    Z_thresh = rho_slider * np.sqrt(2) * sigma_est   # limiar linear
-
-    # --------------------------------------------------
-    # LCR teórico (fórmula do slide)
-    # L_z = √(2π) · f_D · ρ · exp(−ρ²)
-    # --------------------------------------------------
-    rho_val  = rho_slider
-    LCR_teo  = np.sqrt(2*np.pi) * fd * rho_val * np.exp(-rho_val**2)
-
-    # AFD teórico (fórmula do slide)
-    # t̄_z = σ / (Z · f_D · √π) · [exp(Z²/2σ²) − 1]
-    #       = [exp(ρ²) − 1] / (√(2π) · f_D · ρ)
-    AFD_teo  = (np.exp(rho_val**2) - 1) / (np.sqrt(2*np.pi) * fd * rho_val + 1e-30)
+    Z_cur = rho_val * np.sqrt(2) * sigma_cur
+    Z_ref = rho_val * np.sqrt(2) * sigma_ref
 
     # --------------------------------------------------
-    # Cruzamentos descendentes  (z desce abaixo de Z)
+    # LCR / AFD teóricos
     # --------------------------------------------------
-    above = z >= Z_thresh
-    cross_down_idx = np.where(np.diff(above.astype(int)) == -1)[0]
+    LCR_cur = np.sqrt(2*np.pi) * fd     * rho_val * np.exp(-rho_val**2)
+    LCR_ref = np.sqrt(2*np.pi) * FD_REF * rho_val * np.exp(-rho_val**2)
 
-    # Durações de fade
-    fade_start = np.where(np.diff(above.astype(int)) == -1)[0]
-    fade_end   = np.where(np.diff(above.astype(int)) ==  1)[0]
-    if len(fade_end) > 0 and len(fade_start) > 0 and fade_end[0] < fade_start[0]:
-        fade_end = fade_end[1:]
-    n_pairs = min(len(fade_start), len(fade_end))
-    fade_start = fade_start[:n_pairs]
-    fade_end   = fade_end[:n_pairs]
-    fade_dur   = t[fade_end] - t[fade_start] if n_pairs > 0 else np.array([])
-
-    LCR_med = len(cross_down_idx) / (t[-1] - t[0])
-    AFD_med = np.mean(fade_dur) * 1e3 if len(fade_dur) > 0 else 0.0
+    AFD_cur = (np.exp(rho_val**2) - 1) / (np.sqrt(2*np.pi) * fd     * rho_val + 1e-30)
+    AFD_ref = (np.exp(rho_val**2) - 1) / (np.sqrt(2*np.pi) * FD_REF * rho_val + 1e-30)
 
     # --------------------------------------------------
-    # Eixo de tempo em ms
+    # Cruzamentos e durações de fade – envoltória ATUAL
     # --------------------------------------------------
-    t_ms = t * 1e3
+    above_cur      = z_cur >= Z_cur
+    cross_down_cur = np.where(np.diff(above_cur.astype(int)) == -1)[0]
+    fade_start_cur = np.where(np.diff(above_cur.astype(int)) == -1)[0]
+    fade_end_cur   = np.where(np.diff(above_cur.astype(int)) ==  1)[0]
+    if len(fade_end_cur) > 0 and len(fade_start_cur) > 0 and fade_end_cur[0] < fade_start_cur[0]:
+        fade_end_cur = fade_end_cur[1:]
+    n_pairs_cur = min(len(fade_start_cur), len(fade_end_cur))
+    fade_dur_cur = (t[fade_end_cur[:n_pairs_cur]] - t[fade_start_cur[:n_pairs_cur]]
+                    if n_pairs_cur > 0 else np.array([]))
+    LCR_med_cur = len(cross_down_cur) / (t[-1] - t[0])
+    AFD_med_cur = np.mean(fade_dur_cur) * 1e3 if len(fade_dur_cur) > 0 else 0.0
+
 
     # --------------------------------------------------
-    # FIGURA  –  estilo do slide
+    # FIGURA PRINCIPAL
     # --------------------------------------------------
     fig, ax = plt.subplots(figsize=(11, 5.5))
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
 
-    # Envoltória z(t)
-    ax.plot(t_ms, z, color="#1a5fa8", linewidth=1.0, label=r"$z(t) = |\beta(t)|$")
 
-    # Linha do limiar Z
-    ax.axhline(Z_thresh, color="crimson", linewidth=1.8, linestyle="-",
-               label=f"Limiar $Z$  (ρ = {rho_val:.2f})")
+    # Envoltória ATUAL (azul, em frente)
+    ax.plot(t_ms, z_cur, color="#1a5fa8", linewidth=1.0,
+            label=r"$z(t)$ atual")
+    ax.axhline(Z_cur, color="crimson", linewidth=1.8, linestyle="-",
+               label=f"Limiar $Z$ atual  (ρ={rho_val:.2f})")
 
-    # Sombreia fades (z < Z)
-    ax.fill_between(t_ms, z, Z_thresh,
-                    where=(z < Z_thresh),
-                    color="crimson", alpha=0.18)
+    # Fades da atual sombreados (vermelho claro)
+    ax.fill_between(t_ms, z_cur, Z_cur,
+                    where=(z_cur < Z_cur),
+                    color="crimson", alpha=0.15)
 
-    z_max    = z.max()
-    y_top    = z_max * 1.15   # teto do eixo y
-
-    # Cruzamentos descendentes → pequena seta ↓ sobre o limiar
-    for idx in cross_down_idx[:25]:
-        ax.annotate("", xy=(t_ms[idx], Z_thresh - 0.04),
-                    xytext=(t_ms[idx], Z_thresh + 0.12),
+    # Setas nos cruzamentos descendentes (atual)
+    for idx in cross_down_cur[:20]:
+        ax.annotate("", xy=(t_ms[idx], Z_cur - 0.04),
+                    xytext=(t_ms[idx], Z_cur + 0.12),
                     arrowprops=dict(arrowstyle="-|>", color="crimson",
                                    lw=1.3, mutation_scale=8))
 
-    # Anota t_{z,i} nos dois primeiros fades (igual ao slide)
-    for i in range(min(2, n_pairs)):
-        t0 = t_ms[fade_start[i]]
-        t1 = t_ms[fade_end[i]]
-        y_arr = Z_thresh * 0.40
+    # Anotações t_{z,i} nos dois primeiros fades atuais
+    fade_start_cur = fade_start_cur[:n_pairs_cur]
+    fade_end_cur   = fade_end_cur[:n_pairs_cur]
+    for i in range(min(2, n_pairs_cur)):
+        t0 = t_ms[fade_start_cur[i]]
+        t1 = t_ms[fade_end_cur[i]]
+        y_arr = Z_cur * 0.35
         ax.annotate("", xy=(t1, y_arr), xytext=(t0, y_arr),
                     arrowprops=dict(arrowstyle="<->", color="crimson", lw=1.4))
-        ax.text((t0+t1)/2, y_arr - 0.06,
+        ax.text((t0+t1)/2, y_arr - 0.05,
                 rf"$t_{{z,{i+1}}}$",
                 ha="center", va="top", fontsize=10, color="crimson")
 
-    # Rótulo Z no eixo y
-    ax.text(-0.012 * t_ms[-1], Z_thresh, "$Z$",
-            ha="right", va="center", fontsize=12, color="crimson", fontweight="bold")
+    # Rótulos Z no eixo y
+    ax.text(-0.012 * t_ms[-1], Z_cur, "$Z$",
+            ha="right", va="center", fontsize=11, color="crimson", fontweight="bold")
+ 
 
+    y_top = max(z_cur.max(), z_ref.max()) * 1.15
     ax.set_xlabel("$t$ (ms)", fontsize=12)
     ax.set_ylabel("$z(t)$", fontsize=12)
     ax.set_xlim(t_ms[0], t_ms[-1])
     ax.set_ylim(0, y_top)
-    # Legenda customizada
-    legend_elements = [
-        Line2D([0], [0], color="#1a5fa8", lw=1.0, label=r"$z(t)=|\beta(t)|$"),
-        Line2D([0], [0], color="crimson", lw=1.8,
-            label=f"Limiar $Z$  ($\\rho$ = {rho_val:.2f})"),
-        Line2D([0], [0], color="crimson", marker='v', linestyle='None', markersize=8,
-            label="Level Crossing Rate (LCR)"),
-        Line2D([0], [0], color="crimson", lw=1.4,
-            label=r"$t_{z,i}$: Average Fade Duration (AFD)")
-    ]
 
+    legend_elements = [
+        Line2D([0],[0], color="#1a5fa8", lw=1.0,  label=r"$z(t)$"),
+        Line2D([0],[0], color="crimson", lw=1.8,  label=f"Limiar $Z$  (ρ={rho_val:.2f})"),
+        Line2D([0],[0], color="crimson", marker='v', linestyle='None', markersize=8,
+               label="LCR – Level Crossing Rate"),
+        Line2D([0],[0], color="crimson", lw=1.4,
+               label=r"$t_{z,i}$: AFD – Average Fade Duration"),
+    ]
     ax.legend(handles=legend_elements, loc="upper right", fontsize=9, framealpha=0.85)
     ax.grid(True, linestyle="--", alpha=0.35)
+    fig.subplots_adjust(top=0.85)
 
-    fig.subplots_adjust(top=0.70)
     st.pyplot(fig)
