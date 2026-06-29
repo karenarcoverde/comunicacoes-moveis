@@ -248,9 +248,9 @@ else:
         Line2D([0], [0], color="crimson", lw=1.8,
             label=f"Limiar $Z$  ($\\rho$ = {rho_val:.2f})"),
         Line2D([0], [0], color="crimson", marker='v', linestyle='None', markersize=8,
-            label="level crossing rate (LCR)"),
+            label="Level Crossing Rate (LCR)"),
         Line2D([0], [0], color="crimson", lw=1.4,
-            label=r"$t_{z,i}$: average fade duration (AFD)")
+            label=r"$t_{z,i}$: Average Fade Duration (AFD)")
     ]
 
     ax.legend(handles=legend_elements, loc="upper right", fontsize=9, framealpha=0.85)
