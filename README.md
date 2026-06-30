@@ -46,6 +46,7 @@ streamlit run projeto_2.py
 - RMS (RMS Delay Spread)
 - Power Delay Profile (PDP)
 - Microwaves
+- Milimiter Wave
 - Level Crossing Rate (LCR)
 - Average Fade Duration (AFD)
 - Short-Time Fourier Transform (STFT)
