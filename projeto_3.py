@@ -157,7 +157,7 @@ grafico_ui = st.selectbox(
     [
         "PDP – Power Delay Profile",
         "LCR / AFD – Envoltória temporal com cruzamentos de nível",
-        "Espetrograma 2D/3D (STFT) – variabilidade temporal induzida por f_m"
+        "Espectograma 2D/3D (STFT) – variabilidade temporal induzida por f_m"
     ]
 )
 
@@ -285,7 +285,7 @@ elif grafico_ui == "LCR / AFD – Envoltória temporal com cruzamentos de nível
 else:
     st.info(
         "💡 Como usar:\n"
-        "- Espectrograma STFT 2D/3D do canal, mostrando como a potência varia no tempo e na frequência Doppler devido ao desvanecimento.\n"
+        "- Espectograma STFT 2D/3D do canal, mostrando como a potência varia no tempo e na frequência Doppler devido ao desvanecimento.\n"
         "- Altere as entradas: Velocidade do terminal e Faixa de frequência.\n"
         "- Altere o modo do espectograma para 2D ou 3D.\n"
     )
@@ -293,7 +293,7 @@ else:
     fd = max(f_doppler, 0.1)
 
     modo_stft = st.radio(
-        "Modo do espetrograma",
+        "Modo do espectograma",
         ["2D", "3D"],
         horizontal=True
     )
