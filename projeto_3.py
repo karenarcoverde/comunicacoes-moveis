@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from mpl_toolkits.mplot3d import Axes3D
 
 # -------------------------------
 # CONFIGURAÇÃO DA PÁGINA
