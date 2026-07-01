@@ -366,7 +366,7 @@ else:
 
         surf = ax.plot_surface(T_s, F_s, S_s, cmap="viridis", linewidth=0, antialiased=True)
 
-        ax.set_title("Espetrograma 3D (STFT) do canal")
+        ax.set_title("Espectograma 3D (STFT) do canal")
         ax.set_xlabel("Tempo (ms)")
         ax.set_ylabel("Frequência Doppler (Hz)")
         ax.set_zlabel("Magnitude normalizada (dB)")
