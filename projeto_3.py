@@ -339,7 +339,7 @@ else:
         ax.axhline(fd, color="white", linestyle="--", linewidth=1.2, label=r"$+f_m$")
         ax.axhline(-fd, color="white", linestyle="--", linewidth=1.2, label=r"$-f_m$")
 
-        ax.set_title("Espetrograma 2D (STFT) do canal")
+        ax.set_title("Espectograma 2D (STFT) do canal")
         ax.set_xlabel("Tempo (ms)")
         ax.set_ylabel("Frequência Doppler (Hz)")
         ax.legend(loc="upper right")
