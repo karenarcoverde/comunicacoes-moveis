@@ -165,6 +165,13 @@ grafico_ui = st.selectbox(
 # PLOT PDP
 # ================================
 if grafico_ui == "PDP – Power Delay Profile":
+     # Adiciona instruções de uso
+    st.info(
+        "💡 Como usar:\n"
+        "- PDP do canal TDL mostrando a distribuição dos multipercursos em atraso e potência, com limiar de ruído para análise do espalhamento temporal.\n"
+        "- Altere as entradas: Perfil de canal 3GPP, RMS Delay Spread e Limiar de ruído."
+    )
+
     fig, ax = plt.subplots()
     ax.stem(delays, pdp_db, label=channel_ui)
     ax.axhline(noise_floor, color="red", linestyle="--", label="Limiar de Ruído")
@@ -179,6 +186,13 @@ if grafico_ui == "PDP – Power Delay Profile":
 # PLOT LCR / AFD
 # ================================
 elif grafico_ui == "LCR / AFD – Envoltória temporal com cruzamentos de nível":
+      # Adiciona instruções de uso
+    st.info(
+        "💡 Como usar:\n"
+        "- Envoltória temporal do canal com um limiar normalizado, destacando os cruzamentos de nível (LCR) e a duração média dos desvanecimentos (AFD).\n"
+        "- Altere as entradas: Nível normalizado ρ, Velocidade do terminal e Faixa de frequência."
+    )
+
     fd = max(f_doppler, 0.1)
 
     t, h_cur, z_cur = gera_canal_rayleigh(fd, seed=42)
@@ -269,6 +283,13 @@ elif grafico_ui == "LCR / AFD – Envoltória temporal com cruzamentos de nível
 # PLOT STFT 2D / 3D
 # ================================
 else:
+    st.info(
+        "💡 Como usar:\n"
+        "- Espectrograma STFT 2D/3D do canal, mostrando como a potência varia no tempo e na frequência Doppler devido ao desvanecimento.\n"
+        "- Altere as entradas: Velocidade do terminal e Faixa de frequência.\n"
+        "- Altere o modo do espectograma para 2D ou 3D.\n"
+    )
+
     fd = max(f_doppler, 0.1)
 
     modo_stft = st.radio(
