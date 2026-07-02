@@ -128,7 +128,7 @@ def gera_canal_rayleigh(fd_sim, seed=42, N_sin=40, N_samples=6000, T_total=None)
     return t, h, z
 
 # -------------------------------
-# STFT MANUAL
+# STFT
 # -------------------------------
 def compute_stft(x, fs, nperseg=256, noverlap=192):
     step = nperseg - noverlap
@@ -175,7 +175,6 @@ if grafico_ui == "PDP – Power Delay Profile":
 
     y_min = min(pdp_db.min(), noise_floor) - 5
 
-    # Setas estilo "seta cheia" (como no gráfico de referência)
     for x, y in zip(delays, pdp_db):
         ax.annotate(
             "", xy=(x, y), xytext=(x, y_min),
@@ -198,7 +197,7 @@ if grafico_ui == "PDP – Power Delay Profile":
     ax.set_ylabel("Potência (dB)")
     ax.grid(True, linestyle="--", alpha=0.35)
 
-    # Legenda manual (annotate não entra automaticamente na legenda)
+    # Legenda
     legend_elements = [
         Line2D([0], [0], color="#1a5fa8", lw=2, marker="^",
                markersize=9, label=channel_ui),
