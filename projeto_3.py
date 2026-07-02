@@ -157,7 +157,7 @@ grafico_ui = st.selectbox(
     [
         "PDP – Power Delay Profile",
         "LCR / AFD – Envoltória temporal com cruzamentos de nível",
-        "Espectograma 2D/3D (STFT) – variabilidade temporal induzida por f_m"
+        "Espectrograma 2D/3D (STFT) – variabilidade temporal induzida por f_m"
     ]
 )
 
@@ -285,15 +285,15 @@ elif grafico_ui == "LCR / AFD – Envoltória temporal com cruzamentos de nível
 else:
     st.info(
         "💡 Como usar:\n"
-        "- Espectograma STFT 2D/3D do canal, mostrando como a potência varia no tempo e na frequência Doppler devido ao desvanecimento.\n"
+        "- Espectrograma STFT 2D/3D do canal, mostrando como a potência varia no tempo e na frequência Doppler devido ao desvanecimento.\n"
         "- Altere as entradas: Velocidade do terminal e Faixa de frequência.\n"
-        "- Altere o modo do espectograma para 2D ou 3D.\n"
+        "- Altere o modo do espectrograma para 2D ou 3D.\n"
     )
 
     fd = max(f_doppler, 0.1)
 
     modo_stft = st.radio(
-        "Modo do espectograma",
+        "Modo do espectrograma",
         ["2D", "3D"],
         horizontal=True
     )
@@ -339,7 +339,7 @@ else:
         ax.axhline(fd, color="white", linestyle="--", linewidth=1.2, label=r"$+f_m$")
         ax.axhline(-fd, color="white", linestyle="--", linewidth=1.2, label=r"$-f_m$")
 
-        ax.set_title("Espectograma 2D (STFT) do canal")
+        ax.set_title("Espectrograma 2D (STFT) do canal")
         ax.set_xlabel("Tempo (ms)")
         ax.set_ylabel("Frequência Doppler (Hz)")
         ax.legend(loc="upper right")
@@ -366,7 +366,7 @@ else:
 
         surf = ax.plot_surface(T_s, F_s, S_s, cmap="viridis", linewidth=0, antialiased=True)
 
-        ax.set_title("Espectograma 3D (STFT) do canal")
+        ax.set_title("Espectrograma 3D (STFT) do canal")
         ax.set_xlabel("Tempo (ms)")
         ax.set_ylabel("Frequência Doppler (Hz)")
         ax.set_zlabel("Magnitude normalizada (dB)")
