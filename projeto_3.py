@@ -165,7 +165,6 @@ grafico_ui = st.selectbox(
 # PLOT PDP
 # ================================
 if grafico_ui == "PDP – Power Delay Profile":
-     # Adiciona instruções de uso
     st.info(
         "💡 Como usar:\n"
         "- PDP do canal TDL mostrando a distribuição dos multipercursos em atraso e potência, com limiar de ruído para análise do espalhamento temporal.\n"
@@ -173,13 +172,40 @@ if grafico_ui == "PDP – Power Delay Profile":
     )
 
     fig, ax = plt.subplots()
-    ax.stem(delays, pdp_db, label=channel_ui)
-    ax.axhline(noise_floor, color="red", linestyle="--", label="Limiar de Ruído")
+
+    y_min = min(pdp_db.min(), noise_floor) - 5
+
+    # Setas estilo "seta cheia" (como no gráfico de referência)
+    for x, y in zip(delays, pdp_db):
+        ax.annotate(
+            "", xy=(x, y), xytext=(x, y_min),
+            arrowprops=dict(
+                arrowstyle="-|>",
+                color="#1a5fa8",
+                lw=2,
+                mutation_scale=18
+            )
+        )
+
+    ax.axhline(0, color="black", linewidth=0.8)
+    ax.axhline(noise_floor, color="red", linestyle="--", linewidth=1.5)
+
+    ax.set_ylim(y_min, max(5, pdp_db.max() + 5))
+    ax.set_xlim(-max(delays) * 0.03, max(delays) * 1.05)
+
     ax.set_title(f"PDP - {channel_ui}")
     ax.set_xlabel("Delay (ns)")
     ax.set_ylabel("Potência (dB)")
-    ax.legend()
     ax.grid(True, linestyle="--", alpha=0.35)
+
+    # Legenda manual (annotate não entra automaticamente na legenda)
+    legend_elements = [
+        Line2D([0], [0], color="#1a5fa8", lw=2, marker="^",
+               markersize=9, label=channel_ui),
+        Line2D([0], [0], color="red", linestyle="--", label="Limiar de Ruído"),
+    ]
+    ax.legend(handles=legend_elements)
+
     st.pyplot(fig)
 
 # ================================
